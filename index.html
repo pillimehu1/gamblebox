@@ -2,8 +2,6 @@
 <html>
 <head>
   <title>Test</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
 <body>
@@ -11,26 +9,35 @@
   <h1>My site</h1>
 
   <script>
-    const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"><</script>
 
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+<script>
+  alert("SUPABASE SCRIPT START");
 
-    async function testSupabase() {
+  const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
+
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  alert("SUPABASE CREATED CLIENT");
+
+  async function testSupabase() {
+    try {
       const { data, error } = await supabase
         .from("users")
         .select("*");
 
       alert(
-        "DATA: " + JSON.stringify(data) +
-        "\nERROR: " + JSON.stringify(error)
+        "DATA:\n" + JSON.stringify(data) +
+        "\n\nERROR:\n" + JSON.stringify(error)
       );
-    }
 
-    testSupabase();
-  </script>
-<script>
-  alert("JS IS RUNNING");
+    } catch (e) {
+      alert("CRASH: " + e.message);
+    }
+  }
+
+  testSupabase();
 </script>
 
 </body>
