@@ -19,29 +19,26 @@
   }
 
   loadSupabase(async () => {
-    alert("LIB LOADED");
+  alert("LIB LOADED");
 
-    const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
+  const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
+  const supabaseKey = "YOUR_ANON_KEY";
 
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    alert("CLIENT READY");
+  alert("CLIENT READY");
 
-    try {
-      const { data, error } = await supabase
-        .from("Users")
-        .select("*");
+  const { data, error } = await supabase
+    .from("Users")
+    .select("*");
 
-      alert(
-        "DATA:\n" + JSON.stringify(data) +
-        "\nERROR:\n" + JSON.stringify(error)
-      );
-
-    } catch (e) {
-      alert("CRASH: " + e.message);
-    }
-  });
+  alert(
+    "PROJECT TEST\n\n" +
+    "COUNT: " + (data ? data.length : 0) +
+    "\n\nFULL DATA:\n" + JSON.stringify(data, null, 2) +
+    "\n\nERROR:\n" + JSON.stringify(error, null, 2)
+  );
+});
 </script>
 
 </body>
