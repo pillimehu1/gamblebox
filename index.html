@@ -1,12 +1,14 @@
 <!doctype html>
 <html>
 <head>
-  <title>SUPABASE TEST</title>
+  <title>Test</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
 <body>
-  <h1>Page Loaded</h1>
+
+  <h1>My site</h1>
 
   <script>
     const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
@@ -19,16 +21,10 @@
         .from("users")
         .select("*");
 
-      const box = document.createElement("div");
-      box.style = "background:#000;color:#0f0;padding:10px;margin:10px;white-space:pre-wrap;";
-
-      box.innerText =
-        "SUPABASE TEST\n\nDATA:\n" +
-        JSON.stringify(data, null, 2) +
-        "\n\nERROR:\n" +
-        JSON.stringify(error, null, 2);
-
-      document.body.appendChild(box);
+      alert(
+        "DATA: " + JSON.stringify(data) +
+        "\nERROR: " + JSON.stringify(error)
+      );
     }
 
     testSupabase();
