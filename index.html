@@ -3,13 +3,32 @@
 <head>
   <title>RESET TEST</title>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
-<body>
-  <h1>IF YOU SEE THIS, HTML WORKS</h1>
+<script>
+  const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
 
-  <script>
-    alert("JS IS WORKING");
-    document.body.innerHTML += "<p>JS OUTPUT WORKS</p>";
-  </script>
+  const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+  async function testSupabase() {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
+
+    const box = document.createElement("div");
+    box.style = "background:#000;color:#0f0;padding:10px;margin:10px;white-space:pre-wrap;";
+
+    box.innerText =
+      "SUPABASE CONNECT TEST\n\nDATA:\n" +
+      JSON.stringify(data, null, 2) +
+      "\n\nERROR:\n" +
+      JSON.stringify(error, null, 2);
+
+    document.body.appendChild(box);
+  }
+
+  testSupabase();
+</script>
 </body>
 </html>
