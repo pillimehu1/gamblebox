@@ -2534,7 +2534,6 @@ document.getElementById('devPwInput').addEventListener('keydown', function(e) {
 
 </script>
 <script>
- alert("SCRIPT STARTED");
   const supabaseUrl = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
 
@@ -2543,16 +2542,22 @@ document.getElementById('devPwInput').addEventListener('keydown', function(e) {
   async function testSupabase() {
     const { data, error } = await supabase
       .from("users")
-      .select("*")
-      .limit(1);
+      .select("*");
 
     const box = document.createElement("div");
-    box.style = "background:#000;color:#0f0;padding:10px;margin:10px;white-space:pre-wrap;";
+    box.style = `
+      background:black;
+      color:lime;
+      padding:10px;
+      margin:10px;
+      font-family:monospace;
+      white-space:pre-wrap;
+    `;
 
     box.innerText =
-      "SUPABASE TEST\n\n" +
-      "DATA: " + JSON.stringify(data, null, 2) + "\n\n" +
-      "ERROR: " + JSON.stringify(error, null, 2);
+      "SUPABASE RESULT\n\n" +
+      "DATA:\n" + JSON.stringify(data, null, 2) +
+      "\n\nERROR:\n" + JSON.stringify(error, null, 2);
 
     document.body.appendChild(box);
   }
