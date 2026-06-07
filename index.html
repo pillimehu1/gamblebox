@@ -3941,23 +3941,36 @@ async function loadLb(tab) {
   });
   document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">Loading…</div>';
 
-  const { data, error } = await sb.rpc('get_leaderboard', { sort_by: tab });
+  // Fetch all users with username + balance + stats blob
+  const { data, error } = await sb
+    .from('users')
+    .select('username, balance, stats')
+    .not('username', 'is', null)
+    .limit(200);
+
   if (error || !data) {
     document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load. <span style="cursor:pointer;color:var(--blue);text-decoration:underline;" onclick="loadLb(lbCurrentTab)">Retry</span></div>';
     return;
   }
 
   let rows = data.map(u => {
-    const xp = parseFloat(u.xp) || 0;
+    let st = {};
+    try { st = typeof u.stats === 'string' ? JSON.parse(u.stats) : (u.stats || {}); } catch(e) {}
+    const xp = parseFloat(st.xp) || 0;
     return {
       username: u.username,
       balance: parseFloat(u.balance) || 0,
-      wagered: parseFloat(u.wagered) || 0,
-      wins: parseInt(u.wins) || 0,
+      wagered: parseFloat(st.totalWagered) || 0,
+      wins: parseInt(st.wins) || 0,
       xp,
       level: getLevelFromXp(xp)
     };
   });
+
+  if (tab === 'balance') rows.sort((a,b) => b.balance - a.balance);
+  else if (tab === 'wagered') rows.sort((a,b) => b.wagered - a.wagered);
+  else if (tab === 'wins') rows.sort((a,b) => b.wins - a.wins);
+  else rows.sort((a,b) => b.level - a.level || b.xp - a.xp);
 
   const myUsername = currentUser?._username;
   // Find my rank
