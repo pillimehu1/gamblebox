@@ -1780,6 +1780,17 @@
         <div class="admin-msg" id="adminDevMsg"></div>
       </div>
 
+      <!-- OWNER ONLY: MANAGE ADMINS -->
+      <div class="admin-section" id="ownerSection" style="display:none;border-color:rgba(240,192,64,.3);">
+        <div class="admin-section-title" style="color:var(--gold);">👑 Manage Admins <span style="font-size:.6rem;color:var(--muted);">(Owner Only)</span></div>
+        <div id="adminList" style="margin-bottom:12px;"></div>
+        <div class="admin-row">
+          <input class="admin-input" id="ownerAddAdminUser" placeholder="Username to promote to admin" maxlength="20">
+          <button class="admin-btn gold" onclick="ownerAddAdmin()">Add Admin</button>
+        </div>
+        <div class="admin-msg" id="ownerAdminMsg"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -6272,24 +6283,85 @@ async function checkDailyBonus() {
 //  ADMIN SYSTEM
 //  Add your Supabase user ID(s) here to grant admin access
 // ════════════════════════════════════════════════════════════
-const ADMIN_IDS = [
+const OWNER_ID = 'b8b04d1d-77c5-41f0-815e-bc60b5247709';
+let ADMIN_IDS = [
   'f845e238-2678-47ec-9b4f-c6e333bfb763',
   'b8b04d1d-77c5-41f0-815e-bc60b5247709'
 ];
 
-function isAdmin() { return currentUser && ADMIN_IDS.includes(currentUser.id); }
+function isOwner() { return currentUser && currentUser.id === OWNER_ID; }
+function isAdmin() { return currentUser && (ADMIN_IDS.includes(currentUser.id) || currentUser.id === OWNER_ID); }
 
 function openAdmin() {
   if (!isAdmin()) return;
   document.getElementById('adminOverlay').classList.add('open');
   // Clear all fields
-  ['adminLookupUser','adminBalUser','adminBalAmount','adminResetUser','adminBanUser','adminDevUser','adminDevHours'].forEach(id => {
+  ['adminLookupUser','adminBalUser','adminBalAmount','adminResetUser','adminBanUser','adminDevUser','adminDevHours','ownerAddAdminUser'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  ['adminLookupMsg','adminBalMsg','adminResetMsg','adminBanMsg','adminDevMsg'].forEach(id => {
+  ['adminLookupMsg','adminBalMsg','adminResetMsg','adminBanMsg','adminDevMsg','ownerAdminMsg'].forEach(id => {
     const el = document.getElementById(id); if (el) { el.textContent = ''; el.className = 'admin-msg'; }
   });
   document.getElementById('adminUserCard').style.display = 'none';
+  // Show owner section and render admin list
+  if (isOwner()) {
+    document.getElementById('ownerSection').style.display = 'block';
+    renderAdminList();
+  } else {
+    document.getElementById('ownerSection').style.display = 'none';
+  }
+}
+
+function renderAdminList() {
+  const list = document.getElementById('adminList');
+  // Filter out owner from the removable list
+  const removable = ADMIN_IDS.filter(id => id !== OWNER_ID);
+  if (!removable.length) { list.innerHTML = '<div style="color:var(--muted);font-size:.78rem;">No admins added yet.</div>'; return; }
+  // We only have IDs — fetch usernames from Supabase
+  sb.from('users').select('id, username').in('id', removable).then(({ data }) => {
+    if (!data || !data.length) { list.innerHTML = '<div style="color:var(--muted);font-size:.78rem;">No admins found.</div>'; return; }
+    list.innerHTML = data.map(u => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:9px;margin-bottom:6px;">
+        <span style="font-weight:700;color:var(--gold);">👮 ${u.username || u.id.slice(0,8)+'…'}</span>
+        <button class="admin-btn" style="padding:5px 12px;font-size:.72rem;" onclick="ownerRemoveAdmin('${u.id}','${u.username}')">Remove</button>
+      </div>`).join('');
+  });
+}
+
+// Helper: check if target user is protected (owner or admin)
+function _isProtected(userId) {
+  return userId === OWNER_ID || ADMIN_IDS.includes(userId);
+}
+
+// OWNER: ADD ADMIN
+async function ownerAddAdmin() {
+  const un = document.getElementById('ownerAddAdminUser').value.trim();
+  if (!un) return _adminMsg('ownerAdminMsg', 'Enter a username.', false);
+  _adminMsg('ownerAdminMsg', 'Looking up…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('ownerAdminMsg', 'User not found.', false);
+  if (u.id === OWNER_ID) return _adminMsg('ownerAdminMsg', 'That is the owner account.', false);
+  if (ADMIN_IDS.includes(u.id)) return _adminMsg('ownerAdminMsg', `${un} is already an admin.`, false);
+  const ok = await showConfirm({ icon:'👮', title:'Add Admin?', msg:`Make ${un} an admin?`, yesText:'Confirm' });
+  if (!ok) return;
+  // Store in Supabase
+  const { error } = await sb.from('users').update({ is_admin: true }).eq('id', u.id);
+  if (error) return _adminMsg('ownerAdminMsg', error.message, false);
+  ADMIN_IDS.push(u.id);
+  _adminMsg('ownerAdminMsg', `✓ ${un} is now an admin.`, true);
+  document.getElementById('ownerAddAdminUser').value = '';
+  renderAdminList();
+}
+
+// OWNER: REMOVE ADMIN
+async function ownerRemoveAdmin(userId, username) {
+  const ok = await showConfirm({ icon:'⚠️', title:'Remove Admin?', msg:`Remove admin access from ${username}?`, yesText:'Remove' });
+  if (!ok) return;
+  const { error } = await sb.from('users').update({ is_admin: false }).eq('id', userId);
+  if (error) return _adminMsg('ownerAdminMsg', error.message, false);
+  ADMIN_IDS = ADMIN_IDS.filter(id => id !== userId);
+  _adminMsg('ownerAdminMsg', `✓ ${username} removed from admins.`, true);
+  renderAdminList();
 }
 function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
 document.getElementById('adminOverlay').addEventListener('click', function(e) { if (e.target === this) closeAdmin(); });
@@ -6334,11 +6406,13 @@ async function adminSetBalance() {
   const amount = parseFloat(document.getElementById('adminBalAmount').value);
   if (!un) return _adminMsg('adminBalMsg', 'Enter a username.', false);
   if (isNaN(amount) || amount < 0) return _adminMsg('adminBalMsg', 'Enter a valid amount.', false);
+  _adminMsg('adminBalMsg', 'Checking…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminBalMsg', 'User not found.', false);
+  if (!isOwner() && _isProtected(u.id)) return _adminMsg('adminBalMsg', 'Cannot modify an admin account.', false);
   const ok = await showConfirm({ icon:'💰', title:'Set Balance?', msg:`Set ${un}'s balance to ${fmt(amount)}?`, yesText:'Confirm' });
   if (!ok) return;
   _adminMsg('adminBalMsg', 'Setting…', true);
-  const u = await _adminGetUser(un);
-  if (!u) return _adminMsg('adminBalMsg', 'User not found.', false);
   const { error } = await sb.from('users').update({ balance: amount }).eq('id', u.id);
   if (error) return _adminMsg('adminBalMsg', error.message, false);
   _adminMsg('adminBalMsg', `✓ Set ${un}'s balance to ${fmt(amount)}`, true);
@@ -6348,11 +6422,13 @@ async function adminSetBalance() {
 async function adminResetAccount() {
   const un = document.getElementById('adminResetUser').value.trim();
   if (!un) return _adminMsg('adminResetMsg', 'Enter a username.', false);
+  _adminMsg('adminResetMsg', 'Checking…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminResetMsg', 'User not found.', false);
+  if (!isOwner() && _isProtected(u.id)) return _adminMsg('adminResetMsg', 'Cannot reset an admin account.', false);
   const ok = await showConfirm({ icon:'⚠️', title:'Reset Account?', msg:`This will reset ${un}'s balance to $1,000 and wipe all stats and XP. This cannot be undone.`, yesText:'Reset' });
   if (!ok) return;
   _adminMsg('adminResetMsg', 'Resetting…', true);
-  const u = await _adminGetUser(un);
-  if (!u) return _adminMsg('adminResetMsg', 'User not found.', false);
   const freshStats = DEFAULT_STATS();
   const { error } = await sb.from('users').update({ balance: 1000, stats: JSON.stringify(freshStats) }).eq('id', u.id);
   if (error) return _adminMsg('adminResetMsg', error.message, false);
@@ -6364,11 +6440,13 @@ async function adminToggleBan(disable) {
   const un = document.getElementById('adminBanUser').value.trim();
   if (!un) return _adminMsg('adminBanMsg', 'Enter a username.', false);
   if (un.toLowerCase() === currentUser._username?.toLowerCase()) return _adminMsg('adminBanMsg', "You can't ban yourself.", false);
+  _adminMsg('adminBanMsg', 'Checking…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminBanMsg', 'User not found.', false);
+  if (!isOwner() && _isProtected(u.id)) return _adminMsg('adminBanMsg', 'Cannot ban an admin account.', false);
   const ok = await showConfirm({ icon: disable ? '🚫' : '✅', title: disable ? 'Disable Betting?' : 'Enable Betting?', msg:`${disable ? 'Disable' : 'Enable'} betting for ${un}?`, yesText:'Confirm' });
   if (!ok) return;
   _adminMsg('adminBanMsg', 'Updating…', true);
-  const u = await _adminGetUser(un);
-  if (!u) return _adminMsg('adminBanMsg', 'User not found.', false);
   const { error } = await sb.from('users').update({ betting_disabled: disable }).eq('id', u.id);
   if (error) return _adminMsg('adminBanMsg', error.message, false);
   _adminMsg('adminBanMsg', `✓ Betting ${disable ? 'disabled' : 'enabled'} for ${un}.`, true);
@@ -6502,6 +6580,13 @@ loadWinsFeed = async function() {
   // Load wins feed now that sb is ready
   // Use Supabase Realtime instead of polling
   loadWinsFeed();
+
+  // Sync admin list from Supabase (picks up any admins added since last deploy)
+  sb.from('users').select('id').eq('is_admin', true).then(({ data }) => {
+    if (data) {
+      data.forEach(u => { if (!ADMIN_IDS.includes(u.id)) ADMIN_IDS.push(u.id); });
+    }
+  });
   const _wfChannel = sb.channel('win_feed_realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'win_feed' }, () => {
       loadWinsFeed();
