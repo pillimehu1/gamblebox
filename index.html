@@ -1874,14 +1874,6 @@ document.getElementById('statsOverlay').addEventListener('click', function(e){ i
 function updateBalance(){ 
   document.getElementById('balanceDisplay').textContent=fmt(balance); 
   saveState();
-  if (window._lastXpGain) {
-    const { wager, multiplier } = window._lastXpGain;
-    window._lastXpGain = null;
-    addXp(wager, multiplier);
-  } else {
-    updateLevelUI();
-  }
-  saveBalanceToSupabase();
 }
 
 // Initial setup
@@ -3162,6 +3154,20 @@ async function saveBalanceToSupabase() {
   await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
 }
 
+// ── PATCH updateBalance to sync Supabase + level UI ──
+const _origUpdateBalance = updateBalance;
+updateBalance = function() {
+  _origUpdateBalance();
+  if (window._lastXpGain) {
+    const { wager, multiplier } = window._lastXpGain;
+    window._lastXpGain = null;
+    addXp(wager, multiplier);
+  } else {
+    updateLevelUI();
+  }
+  saveBalanceToSupabase();
+};
+
 // ── PROFILE PANEL ──
 function openProfile() {
   if (!currentUser) return;
@@ -3193,7 +3199,6 @@ function openProfile() {
   document.getElementById('tipAmount').value = '';
   document.getElementById('tipMsg').textContent = '';
   document.getElementById('profileUsernameMsg').textContent = '';
-  updateLevelUI();
   document.getElementById('profileOverlay').classList.add('open');
 }
 
@@ -3532,6 +3537,12 @@ async function checkDailyBonus() {
   setTimeout(() => el.remove(), 4000);
 }
 
+// ── Update openProfile to show level ──
+const _origOpenProfile = openProfile;
+openProfile = function() {
+  _origOpenProfile();
+  updateLevelUI();
+};
 
 (async () => {
   // Show loading screen while we check for existing session
