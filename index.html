@@ -1687,9 +1687,13 @@
     </div>
     <div style="margin-top:20px;">
       <table class="stats-table">
-        <thead><tr><th>Game</th><th>Played</th><th>Wagered</th></tr></thead>
+        <thead><tr><th>Game</th><th>Played</th><th>Win Rate</th><th>Wagered</th></tr></thead>
         <tbody id="statsBody"></tbody>
       </table>
+    </div>
+    <div style="margin-top:20px;">
+      <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;">📜 Recent Game History</div>
+      <div id="statsHistory" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
     </div>
     <div style="margin-top:20px; text-align:right;">
       <button class="dev-reset" onclick="resetStats()">⟳ Reset All Stats</button>
@@ -2783,20 +2787,21 @@ const DEFAULT_STATS = () => ({
   globalAtl: 0,
   xp: 0,
   level: 1,
+  history: [],
   games: {
-    mines:     { played: 0, wagered: 0 },
-    tower:     { played: 0, wagered: 0 },
-    roulette:  { played: 0, wagered: 0 },
-    blackjack: { played: 0, wagered: 0 },
-    coinflip:  { played: 0, wagered: 0 },
-    keno:      { played: 0, wagered: 0 },
-    plinko:    { played: 0, wagered: 0 },
-    reme:      { played: 0, wagered: 0 },
-    slots:     { played: 0, wagered: 0 },
-    crash:     { played: 0, wagered: 0 },
-    dice:      { played: 0, wagered: 0 },
-    hilo:      { played: 0, wagered: 0 },
-    wheel:     { played: 0, wagered: 0 }
+    mines:     { played: 0, wagered: 0, wins: 0 },
+    tower:     { played: 0, wagered: 0, wins: 0 },
+    roulette:  { played: 0, wagered: 0, wins: 0 },
+    blackjack: { played: 0, wagered: 0, wins: 0 },
+    coinflip:  { played: 0, wagered: 0, wins: 0 },
+    keno:      { played: 0, wagered: 0, wins: 0 },
+    plinko:    { played: 0, wagered: 0, wins: 0 },
+    reme:      { played: 0, wagered: 0, wins: 0 },
+    slots:     { played: 0, wagered: 0, wins: 0 },
+    crash:     { played: 0, wagered: 0, wins: 0 },
+    dice:      { played: 0, wagered: 0, wins: 0 },
+    hilo:      { played: 0, wagered: 0, wins: 0 },
+    wheel:     { played: 0, wagered: 0, wins: 0 }
   }
 });
 let stats = DEFAULT_STATS();
@@ -2825,43 +2830,70 @@ function updateStatsUI() {
   document.getElementById('statsGames').textContent = stats.gamesPlayed;
   document.getElementById('statsWins').textContent = stats.wins;
   document.getElementById('statsWagered').textContent = fmt(stats.totalWagered);
-  
+
   const profitEl = document.getElementById('statsProfit');
   profitEl.textContent = (stats.netProfit >= 0 ? '+' : '') + fmt(stats.netProfit);
   profitEl.className = 'stat-val ' + (stats.netProfit >= 0 ? 'win-color' : 'lose-color');
-  
+
   document.getElementById('statsGlobalAth').textContent = fmt(stats.globalAth);
   document.getElementById('statsGlobalAtl').textContent = fmt(stats.globalAtl);
 
+  // Per-game table with win rate
   let html = '';
   for(let g in stats.games) {
-    let d = stats.games[g];
+    const d = stats.games[g];
     const wr = d.played > 0 ? Math.round((d.wins||0) / d.played * 100) : 0;
+    const wrColor = wr >= 50 ? 'var(--green)' : wr > 0 ? 'var(--gold)' : 'var(--muted)';
     html += `<tr>
-      <td style="text-transform:capitalize;">${g}</td>
+      <td style="text-transform:capitalize;">${GAME_ICONS[g] || ''} ${g}</td>
       <td>${d.played}</td>
+      <td style="color:${wrColor}">${d.played > 0 ? wr + '%' : '—'}</td>
       <td>${fmt(d.wagered)}</td>
     </tr>`;
   }
   document.getElementById('statsBody').innerHTML = html;
+
+  // Game history
+  const hist = stats.history || [];
+  const histEl = document.getElementById('statsHistory');
+  if (!hist.length) {
+    histEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;padding:12px;">No games played yet.</div>';
+  } else {
+    histEl.innerHTML = hist.map(h => {
+      const won = h.p > h.b;
+      const mult = h.b > 0 ? (h.p / h.b).toFixed(2) : '0.00';
+      const net = h.p - h.b;
+      const ago = timeAgo(new Date(h.t));
+      return `<div style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid ${won ? 'rgba(0,230,118,.2)' : 'rgba(255,23,68,.15)'};border-radius:8px;padding:8px 12px;font-size:.8rem;">
+        <span style="font-size:1rem">${GAME_ICONS[h.g] || '🎰'}</span>
+        <span style="text-transform:capitalize;color:var(--text);flex:1">${h.g}</span>
+        <span style="color:var(--muted)">${mult}×</span>
+        <span style="color:${won ? 'var(--green)' : 'var(--red)'};">${won ? '+' : ''}${fmt(net)}</span>
+        <span style="color:var(--muted);font-size:.7rem">${ago}</span>
+      </div>`;
+    }).join('');
+  }
 }
 
 function trackGame(gameType, bet, payout, isWin) {
+  _pfNonce++;
   stats.gamesPlayed++;
   if (isWin) stats.wins++;
   stats.totalWagered += bet;
-  
   const net = payout - bet;
   stats.netProfit += net;
-  
   if (net > stats.globalAth) stats.globalAth = net;
   if (net < stats.globalAtl) stats.globalAtl = net;
-
   if(stats.games[gameType]) {
     stats.games[gameType].played++;
     stats.games[gameType].wagered += bet;
+    if (isWin) stats.games[gameType].wins = (stats.games[gameType].wins || 0) + 1;
   }
-  
+  // Game history (last 50)
+  if (!stats.history) stats.history = [];
+  stats.history.unshift({ g: gameType, b: Math.round(bet), p: Math.round(payout), t: Date.now() });
+  if (stats.history.length > 50) stats.history.length = 50;
+
   saveState();
   if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI();
 
@@ -3066,6 +3098,7 @@ window.minesClick = function(i) {
     trackGame('mines', currentMinesBet, 0, false);
   } else {
     minesGemsFound++;
+    _achMinesGems = minesGemsFound;
     if (minesGemsFound === 1) document.getElementById('minesCashBtn').disabled = false;
     const bombs = parseInt(document.getElementById('minesCount').value) || 3;
     const baseMult = minesCalcMult(minesGemsFound, bombs);
@@ -4414,36 +4447,71 @@ setInterval(() => {
 //  ACHIEVEMENTS SYSTEM
 // ════════════════════════════════════════════════════════════
 const ACHIEVEMENTS = [
-  { id:'first_bet',    icon:'🎲', name:'First Bet',        desc:'Place your very first bet.',                    check: s => s.gamesPlayed >= 1 },
-  { id:'first_win',    icon:'🏆', name:'First Win',        desc:'Win your first game.',                          check: s => s.wins >= 1 },
-  { id:'veteran',      icon:'🎖️', name:'Veteran',          desc:'Play 100 games.',                               check: s => s.gamesPlayed >= 100 },
-  { id:'high_roller',  icon:'💰', name:'High Roller',      desc:'Wager over $1,000,000 total.',                  check: s => s.totalWagered >= 1_000_000 },
-  { id:'whale',        icon:'🐋', name:'Whale',            desc:'Wager over $1,000,000,000 total.',              check: s => s.totalWagered >= 1_000_000_000 },
-  { id:'profit_100k',  icon:'📈', name:'In the Money',     desc:'Reach $100,000 net profit.',                    check: s => s.netProfit >= 100_000 },
-  { id:'all_games',    icon:'🌟', name:'Game Explorer',    desc:'Play every single game at least once.',         check: s => Object.values(s.games).every(g => g.played >= 1) },
-  { id:'lucky_streak', icon:'🔥', name:'On Fire',          desc:'Win 10 games in a row (tracked this session).', check: () => _achStreak >= 10 },
-  { id:'mines_pro',    icon:'💣', name:'Mine Sweeper',     desc:'Play Mines 50 times.',                          check: s => (s.games.mines?.played||0) >= 50 },
-  { id:'bj_pro',       icon:'🃏', name:'Card Shark',       desc:'Play Blackjack 50 times.',                      check: s => (s.games.blackjack?.played||0) >= 50 },
-  { id:'crash_pro',    icon:'💀', name:'Crash Landing',    desc:'Play Crash 50 times.',                          check: s => (s.games.crash?.played||0) >= 50 },
-  { id:'level10',      icon:'⭐', name:'Rising Star',      desc:'Reach Level 10.',                               check: s => (s.level||1) >= 10 },
-  { id:'level50',      icon:'🌠', name:'Elite',            desc:'Reach Level 50.',                               check: s => (s.level||1) >= 50 },
-  { id:'ath_1m',       icon:'💎', name:'Diamond Hands',   desc:'Win $1,000,000 or more in a single game.',      check: s => s.globalAth >= 1_000_000 },
-  { id:'tipper',       icon:'💸', name:'Generous',         desc:'Send a tip to another player.',                 check: () => _achTipped },
+  // ── General ──
+  { id:'first_bet',     icon:'🎲', name:'First Bet',        desc:'Place your very first bet.',                         check: s => s.gamesPlayed >= 1 },
+  { id:'first_win',     icon:'🏆', name:'First Win',        desc:'Win your first game.',                               check: s => s.wins >= 1 },
+  { id:'veteran',       icon:'🎖️', name:'Veteran',          desc:'Play 100 games.',                                    check: s => s.gamesPlayed >= 100 },
+  { id:'grinder',       icon:'⚙️', name:'Grinder',          desc:'Play 500 games.',                                    check: s => s.gamesPlayed >= 500 },
+  { id:'high_roller',   icon:'💰', name:'High Roller',      desc:'Wager over $1,000,000 total.',                       check: s => s.totalWagered >= 1_000_000 },
+  { id:'whale',         icon:'🐋', name:'Whale',            desc:'Wager over $1,000,000,000 total.',                   check: s => s.totalWagered >= 1_000_000_000 },
+  { id:'profit_100k',   icon:'📈', name:'In the Money',     desc:'Reach $100,000 net profit.',                         check: s => s.netProfit >= 100_000 },
+  { id:'profit_1m',     icon:'🤑', name:'Millionaire',      desc:'Reach $1,000,000 net profit.',                       check: s => s.netProfit >= 1_000_000 },
+  { id:'all_games',     icon:'🌟', name:'Game Explorer',    desc:'Play every single game at least once.',              check: s => Object.values(s.games).every(g => g.played >= 1) },
+  { id:'lucky_streak',  icon:'🔥', name:'On Fire',          desc:'Win 10 games in a row (tracked this session).',      check: () => _achStreak >= 10 },
+  { id:'ath_1m',        icon:'💎', name:'Diamond Hands',    desc:'Win $1,000,000 or more in a single game.',           check: s => s.globalAth >= 1_000_000 },
+  { id:'tipper',        icon:'💸', name:'Generous',         desc:'Send a tip to another player.',                      check: s => s._achTipped === true },
+  // ── Levels ──
+  { id:'level10',       icon:'⭐', name:'Rising Star',      desc:'Reach Level 10.',                                    check: s => getLevelFromXp(s.xp||0) >= 10 },
+  { id:'level50',       icon:'🌠', name:'Elite',            desc:'Reach Level 50.',                                    check: s => getLevelFromXp(s.xp||0) >= 50 },
+  { id:'level100',      icon:'👑', name:'Legend',           desc:'Reach Level 100.',                                   check: s => getLevelFromXp(s.xp||0) >= 100 },
+  // ── Per-game ──
+  { id:'mines_pro',     icon:'💣', name:'Mine Sweeper',     desc:'Play Mines 50 times.',                               check: s => (s.games.mines?.played||0) >= 50 },
+  { id:'mines_master',  icon:'🧨', name:'Bomb Defuser',     desc:'Reveal 10 gems in a single Mines round.',            check: () => _achMinesGems >= 10 },
+  { id:'bj_pro',        icon:'🃏', name:'Card Shark',       desc:'Play Blackjack 50 times.',                           check: s => (s.games.blackjack?.played||0) >= 50 },
+  { id:'crash_pro',     icon:'💀', name:'Crash Landing',    desc:'Play Crash 50 times.',                               check: s => (s.games.crash?.played||0) >= 50 },
+  { id:'crash_high',    icon:'🚀', name:'To The Moon',      desc:'Cash out Crash at 10× or higher.',                   check: () => _achCrashMult >= 10 },
+  { id:'hilo_streak',   icon:'🃏', name:'Hot Hand',         desc:'Reach a Hi-Lo streak of 8.',                         check: () => _achHiloStreak >= 8 },
+  { id:'roulette_pro',  icon:'🎡', name:'Roulette Wheel',   desc:'Play Roulette 50 times.',                            check: s => (s.games.roulette?.played||0) >= 50 },
+  { id:'plinko_pro',    icon:'🔽', name:'Plinko Pro',       desc:'Play Plinko 50 times.',                              check: s => (s.games.plinko?.played||0) >= 50 },
+  { id:'slots_jackpot', icon:'🎰', name:'Jackpot!',         desc:'Hit the 💎💎💎 jackpot in Slots.',                   check: () => _achSlotsJackpot },
+  { id:'dice_pro',      icon:'🎲', name:'Lucky Roll',       desc:'Play Dice 50 times.',                                check: s => (s.games.dice?.played||0) >= 50 },
+  { id:'wheel_pro',     icon:'🎡', name:'Wheel Watcher',    desc:'Play Wheel 50 times.',                               check: s => (s.games.wheel?.played||0) >= 50 },
+  { id:'tower_pro',     icon:'🗼', name:'Tower Climber',    desc:'Play Tower 50 times.',                               check: s => (s.games.tower?.played||0) >= 50 },
+  { id:'keno_pro',      icon:'🔢', name:'Keno King',        desc:'Play Keno 50 times.',                                check: s => (s.games.keno?.played||0) >= 50 },
+  { id:'coinflip_pro',  icon:'🪙', name:'Coin Collector',   desc:'Play Coinflip 50 times.',                            check: s => (s.games.coinflip?.played||0) >= 50 },
+  { id:'reme_pro',      icon:'🎱', name:'Reme Master',      desc:'Play Reme 50 times.',                                check: s => (s.games.reme?.played||0) >= 50 },
 ];
 
-// Session-only trackers (don't persist — intentional for streak/tip)
+// Session-only trackers
 let _achStreak = 0;
-let _achTipped = false;
-let _achUnlocked = new Set(JSON.parse(localStorage.getItem('rc_ach') || '[]'));
+let _achMinesGems = 0;   // tracks gems revealed in current mines round
+let _achCrashMult = 0;   // tracks highest crash cashout mult this session
+let _achHiloStreak = 0;  // tracks highest hilo streak this session
+let _achSlotsJackpot = false;
+let _achUnlocked = new Set();
 
-function _achSave() {
-  localStorage.setItem('rc_ach', JSON.stringify([..._achUnlocked]));
+// Load achievements from Supabase (called after login)
+function _achLoad(savedArr) {
+  _achUnlocked = new Set(Array.isArray(savedArr) ? savedArr : []);
 }
 
+// Save achievements to Supabase via the normal stats save
+function _achSave() {
+  if (!currentUser || isGuest) return;
+  // Piggyback on debounced save — store unlocked IDs in stats._achievements
+  stats._achievements = [..._achUnlocked];
+  // Also persist _achTipped so it survives page reloads
+  stats._achTipped = _achTipped;
+  saveBalanceToSupabase();
+}
+
+let _achTipped = false;
+
 function _achCheck() {
+  const augmented = { ...stats, _achTipped };
   ACHIEVEMENTS.forEach(a => {
     if (_achUnlocked.has(a.id)) return;
-    if (a.check(stats)) {
+    if (a.check(augmented)) {
       _achUnlocked.add(a.id);
       _achSave();
       _showAchToast(a);
@@ -4854,6 +4922,7 @@ window.slotsSpin = function() {
             resultEl.textContent = `🎉 ${finals.join('')} — ${SLOT_PAYOUTS[key]}× → +${fmt(payout)}`;
             resultEl.style.color = 'var(--gold)';
             toast(`🎰 ${SLOT_PAYOUTS[key]}×! Won ${fmt(payout)}`, 'win');
+            if (key === '💎💎💎') _achSlotsJackpot = true;
             trackGame('slots', bet, payout, true);
           } else if (finals[0] === finals[1] || finals[1] === finals[2] || finals[0] === finals[2]) {
             // Any two matching
@@ -5027,6 +5096,7 @@ window.crashCashout = function() {
   document.getElementById('crashCashoutBtn').style.display = 'none';
   document.getElementById('crashBet').disabled = false;
   toast(`✅ Cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
+  if (crashMult > _achCrashMult) _achCrashMult = crashMult;
   trackGame('crash', crashCurrentBet, payout, true);
   crashAddHistory(crashMult, true);
 };
@@ -5211,6 +5281,7 @@ window.hiloGuess = function(guess) {
 
   if (won) {
     hiloStreak++;
+    if (hiloStreak > _achHiloStreak) _achHiloStreak = hiloStreak;
     const mult = HILO_MULTS[Math.min(hiloStreak, HILO_MULTS.length - 1)];
     document.getElementById('hiloStreak').textContent = hiloStreak;
     document.getElementById('hiloMult').textContent = mult.toFixed(2) + '×';
@@ -5537,6 +5608,9 @@ async function onAuthSuccess(user) {
     }
     currentUser._username = data.username || null;
     currentUser._usernameSet = data.username_set || false;
+    // Restore achievements from saved stats
+    _achLoad(stats._achievements || []);
+    _achTipped = stats._achTipped || false;
     // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
