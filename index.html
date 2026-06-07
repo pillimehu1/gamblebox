@@ -599,7 +599,17 @@
   .plinko-bucket { padding:8px 2px; background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:6px; font-size:.65rem; font-weight:700; text-align:center; flex:1; color:var(--text); transition:all .2s; }
   .plinko-bucket.flash { background:var(--gold); color:#000; transform:scale(1.1); z-index: 10; border-color:var(--gold2); box-shadow: 0 0 15px rgba(240,192,64,0.5); }
 
-  /* ── LOBBY ── */
+  /* ── SLOTS ── */
+  .slot-reel { font-size:3.5rem; width:80px; height:80px; display:flex; align-items:center; justify-content:center; border-radius:12px; background:var(--card); border:2px solid var(--border); transition:all .1s; }
+  .slot-reel.spinning { animation:slotSpin .08s linear infinite; }
+  @keyframes slotSpin { 0%{transform:translateY(-4px)} 50%{transform:translateY(4px)} 100%{transform:translateY(-4px)} }
+
+  /* ── CRASH ── */
+  .crash-hist { padding:4px 10px; border-radius:6px; font-size:.75rem; font-weight:700; }
+  .crash-hist.low { background:rgba(0,230,118,.15); color:var(--green); }
+  .crash-hist.mid { background:rgba(240,192,64,.15); color:var(--gold); }
+  .crash-hist.high { background:rgba(213,0,249,.15); color:var(--purple); }
+  .crash-hist.bust { background:rgba(255,23,68,.15); color:var(--red); }
   .lobby-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
   .lobby-card {
     background:var(--card);
@@ -1704,6 +1714,12 @@
     <div class="tab" onclick="showTab('coinflip')">🪙 Coinflip</div>
     <div class="tab" onclick="showTab('keno')">🔢 Keno</div>
     <div class="tab" onclick="showTab('plinko')">🔽 Plinko</div>
+    <div class="tab" onclick="showTab('reme')">🎱 Reme</div>
+    <div class="tab" onclick="showTab('slots')">🎰 Slots</div>
+    <div class="tab" onclick="showTab('crash')">💀 Crash</div>
+    <div class="tab" onclick="showTab('dice')">🎲 Dice</div>
+    <div class="tab" onclick="showTab('hilo')">🃏 Hi-Lo</div>
+    <div class="tab" onclick="showTab('wheel')">🎡 Wheel</div>
   </div>
 
   <!-- ════════════════════ LOBBY ════════════════════ -->
@@ -1758,6 +1774,48 @@
           <div class="lobby-card-body">
             <div class="lobby-card-name">Plinko</div>
             <div class="lobby-card-desc">Watch the ball bounce through the pegs to your multiplier.</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('reme')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#001a1a,#000f10); color:#00e5ff;">🎱</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Reme</div>
+            <div class="lobby-card-desc">Spin and sum the digits. Beat the house. Get 0 for 3× jackpot!</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('slots')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#1a0a00,#100500); color:#ff9800;">🎰</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Slots</div>
+            <div class="lobby-card-desc">Classic 3-reel slots. Cherries, bars, sevens — spin to win!</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('crash')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#1a0000,#100000); color:var(--red);">💀</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Crash</div>
+            <div class="lobby-card-desc">Cash out before the multiplier crashes. The longer you wait, the more you risk.</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('dice')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#0a0a1a,#050510); color:var(--blue);">🎲</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Dice</div>
+            <div class="lobby-card-desc">Predict over or under. Simple, fast, and rewarding.</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('hilo')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#001a0a,#000f05); color:var(--green);">🃏</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Hi-Lo</div>
+            <div class="lobby-card-desc">Higher or lower? Build a streak for massive multipliers.</div>
+          </div>
+        </div>
+        <div class="lobby-card" onclick="showTab('wheel')">
+          <div class="lobby-card-img" style="background:linear-gradient(135deg,#1a1a00,#0f0f00); color:var(--gold);">🎡</div>
+          <div class="lobby-card-body">
+            <div class="lobby-card-name">Wheel</div>
+            <div class="lobby-card-desc">Spin the fortune wheel. Pick your risk level for bigger rewards.</div>
           </div>
         </div>
       </div>
@@ -2134,6 +2192,209 @@
     </div>
   </div>
 
+  <!-- ════════════════════ REME ════════════════════ -->
+  <div class="game-panel" id="panel-reme">
+    <div class="gcard">
+      <div class="gcard-title">🎱 Reme</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:16px;">Spin 0–36. Digit-sum your result and beat the house. Get 0 (spin 0, 19, or 28) for 3× jackpot! Spin 1, 10, or 29 = auto-lose. Tie = house wins.</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="remeBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="if(!remeSpinning) halfBet('remeBet')">½</span>
+          <span class="bq" onclick="if(!remeSpinning) doubleBet('remeBet')">2×</span>
+          <span class="bq" onclick="if(!remeSpinning) maxBet('remeBet')">Max</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;margin:20px 0;">
+        <div style="text-align:center;flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">You</div>
+          <div id="remePlayerSpin" style="font-size:2.5rem;font-weight:900;color:var(--gold);font-family:'Cinzel Decorative',cursive;">—</div>
+          <div id="remePlayerSum" style="font-size:1rem;color:var(--muted);margin-top:4px;">digit sum: —</div>
+        </div>
+        <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--muted);">VS</div>
+        <div style="text-align:center;flex:1;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">House</div>
+          <div id="remeHouseSpin" style="font-size:2.5rem;font-weight:900;color:var(--purple);font-family:'Cinzel Decorative',cursive;">—</div>
+          <div id="remeHouseSum" style="font-size:1rem;color:var(--muted);margin-top:4px;">digit sum: —</div>
+        </div>
+      </div>
+      <div id="remeResult" style="text-align:center;font-size:1.3rem;font-weight:700;min-height:36px;margin-bottom:16px;"></div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;font-size:.8rem;">
+        <div style="color:var(--muted);margin-bottom:6px;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;">Rank (low → high)</div>
+        <div style="color:var(--text);">1 &lt; 2 &lt; 3 &lt; 4 &lt; 5 &lt; 6 &lt; 7 &lt; 8 &lt; 9 &lt; <span style="color:var(--gold);font-weight:700;">0</span></div>
+        <div style="margin-top:6px;color:var(--red);">Auto-lose spins: 1, 10, 29</div>
+        <div style="margin-top:2px;color:var(--gold);">Jackpot 3× spins: 0, 19, 28</div>
+      </div>
+      <button class="btn-primary" style="width:100%;" id="remeBtn" onclick="remeSpin()">Spin</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════ SLOTS ════════════════════ -->
+  <div class="game-panel" id="panel-slots">
+    <div class="gcard">
+      <div class="gcard-title">🎰 Slots</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="slotsBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="if(!slotsSpinning) halfBet('slotsBet')">½</span>
+          <span class="bq" onclick="if(!slotsSpinning) doubleBet('slotsBet')">2×</span>
+          <span class="bq" onclick="if(!slotsSpinning) maxBet('slotsBet')">Max</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin:24px 0;background:var(--card2);border:2px solid var(--border);border-radius:16px;padding:20px;">
+        <div class="slot-reel" id="slotReel0">🍒</div>
+        <div style="display:flex;align-items:center;color:var(--border);font-size:1.5rem;">|</div>
+        <div class="slot-reel" id="slotReel1">🍒</div>
+        <div style="display:flex;align-items:center;color:var(--border);font-size:1.5rem;">|</div>
+        <div class="slot-reel" id="slotReel2">🍒</div>
+      </div>
+      <div id="slotsResult" style="text-align:center;font-size:1.1rem;font-weight:700;min-height:28px;margin-bottom:16px;"></div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;font-size:.78rem;color:var(--muted);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <div>🍒🍒🍒 → <span style="color:var(--gold)">5×</span></div>
+          <div>7️⃣7️⃣7️⃣ → <span style="color:var(--gold)">50×</span></div>
+          <div>🍋🍋🍋 → <span style="color:var(--gold)">8×</span></div>
+          <div>💎💎💎 → <span style="color:var(--gold)">100×</span></div>
+          <div>🍊🍊🍊 → <span style="color:var(--gold)">10×</span></div>
+          <div>⭐⭐⭐ → <span style="color:var(--gold)">20×</span></div>
+          <div>🍇🍇🍇 → <span style="color:var(--gold)">15×</span></div>
+          <div>Any 3 same → <span style="color:var(--gold)">3×</span></div>
+          <div>🍒🍒 (any) → <span style="color:var(--gold)">2×</span></div>
+          <div>No match → <span style="color:var(--red)">lose</span></div>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;" id="slotsBtn" onclick="slotsSpin()">🎰 Spin</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════ CRASH ════════════════════ -->
+  <div class="game-panel" id="panel-crash">
+    <div class="gcard">
+      <div class="gcard-title">💀 Crash</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="crashBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="if(!crashActive) halfBet('crashBet')">½</span>
+          <span class="bq" onclick="if(!crashActive) doubleBet('crashBet')">2×</span>
+          <span class="bq" onclick="if(!crashActive) maxBet('crashBet')">Max</span>
+        </div>
+      </div>
+      <div style="position:relative;background:var(--card2);border:1px solid var(--border);border-radius:16px;height:180px;margin:16px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <canvas id="crashCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        <div id="crashMultDisplay" style="position:relative;z-index:2;text-align:center;">
+          <div id="crashMult" style="font-size:3.5rem;font-weight:900;font-family:'Cinzel Decorative',cursive;color:var(--green);">1.00×</div>
+          <div id="crashStatus" style="font-size:.8rem;color:var(--muted);">Place your bet and start</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-primary" style="flex:2;" id="crashStartBtn" onclick="crashStart()">🚀 Start</button>
+        <button class="btn-secondary" style="flex:1;border-color:var(--red);color:var(--red);display:none;" id="crashCashoutBtn" onclick="crashCashout()">Cash Out</button>
+      </div>
+      <div id="crashHistory" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ DICE ════════════════════ -->
+  <div class="game-panel" id="panel-dice">
+    <div class="gcard">
+      <div class="gcard-title">🎲 Dice</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="diceBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="halfBet('diceBet')">½</span>
+          <span class="bq" onclick="doubleBet('diceBet')">2×</span>
+          <span class="bq" onclick="maxBet('diceBet')">Max</span>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:.8rem;color:var(--muted);">Target: <span id="diceTargetLabel" style="color:var(--gold);font-weight:700;">50</span></span>
+          <span style="font-size:.8rem;color:var(--muted);">Win chance: <span id="diceChanceLabel" style="color:var(--green);font-weight:700;">49%</span></span>
+          <span style="font-size:.8rem;color:var(--muted);">Multiplier: <span id="diceMultLabel" style="color:var(--gold);font-weight:700;">1.96×</span></span>
+        </div>
+        <input type="range" id="diceTarget" min="2" max="98" value="50" step="1" style="width:100%;accent-color:var(--gold);cursor:pointer;height:6px;" oninput="diceUpdateSlider()">
+        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-top:4px;"><span>2</span><span>50</span><span>98</span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <div class="cf-btn selected" id="diceOver" onclick="diceSetSide('over')" style="text-align:center;">📈 Over</div>
+        <div class="cf-btn" id="diceUnder" onclick="diceSetSide('under')" style="text-align:center;">📉 Under</div>
+      </div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <div id="diceResult" style="font-size:4rem;font-weight:900;font-family:'Cinzel Decorative',cursive;color:var(--gold);min-height:70px;display:flex;align-items:center;justify-content:center;">—</div>
+      </div>
+      <div id="diceMsg" style="text-align:center;font-size:1rem;font-weight:700;min-height:24px;margin-bottom:12px;"></div>
+      <button class="btn-primary" style="width:100%;" id="diceBtn" onclick="diceRoll()">Roll Dice</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════ HI-LO ════════════════════ -->
+  <div class="game-panel" id="panel-hilo">
+    <div class="gcard">
+      <div class="gcard-title">🃏 Hi-Lo</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:16px;">Guess if the next card is higher or lower. Build a streak for bigger multipliers!</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="hiloBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="if(!hiloActive) halfBet('hiloBet')">½</span>
+          <span class="bq" onclick="if(!hiloActive) doubleBet('hiloBet')">2×</span>
+          <span class="bq" onclick="if(!hiloActive) maxBet('hiloBet')">Max</span>
+        </div>
+      </div>
+      <div style="text-align:center;margin:20px 0;">
+        <div id="hiloCard" style="width:90px;height:126px;background:#fff;border-radius:12px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-size:2rem;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.2);">🂠</div>
+        <div id="hiloCardLabel" style="margin-top:8px;font-size:1.2rem;font-weight:700;color:var(--gold);">—</div>
+      </div>
+      <div style="text-align:center;margin-bottom:8px;">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Streak: <span id="hiloStreak" style="color:var(--gold);font-weight:700;">0</span> 🔥 &nbsp;|&nbsp; Multiplier: <span id="hiloMult" style="color:var(--gold);font-weight:700;">1.00×</span></div>
+      </div>
+      <div id="hiloMsg" style="text-align:center;font-size:.9rem;font-weight:700;min-height:22px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;">
+        <button class="btn-primary" style="flex:1;" id="hiloHighBtn" onclick="hiloGuess('high')">📈 Higher</button>
+        <button class="btn-secondary" style="flex:1;" id="hiloLowBtn" onclick="hiloGuess('low')">📉 Lower</button>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-primary" style="flex:1;display:none;border:2px solid var(--green);background:transparent;color:var(--green);" id="hiloCashBtn" onclick="hiloCashout()">💰 Cash Out</button>
+        <button class="btn-secondary" style="flex:1;" id="hiloStartBtn" onclick="hiloStart()">New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ WHEEL ════════════════════ -->
+  <div class="game-panel" id="panel-wheel">
+    <div class="gcard">
+      <div class="gcard-title">🎡 Wheel of Fortune</div>
+      <div class="bet-row">
+        <span class="bet-label">Bet</span>
+        <input type="number" class="bet-input" id="wheelBet" value="10" min="1">
+        <div class="bet-quick">
+          <span class="bq" onclick="if(!wheelSpinning) halfBet('wheelBet')">½</span>
+          <span class="bq" onclick="if(!wheelSpinning) doubleBet('wheelBet')">2×</span>
+          <span class="bq" onclick="if(!wheelSpinning) maxBet('wheelBet')">Max</span>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Risk Level</div>
+        <div style="display:flex;gap:8px;">
+          <div class="cf-mode-btn active" id="wheelRiskLow" onclick="wheelSetRisk('low')">🟢 Low</div>
+          <div class="cf-mode-btn" id="wheelRiskMed" onclick="wheelSetRisk('medium')">🟡 Medium</div>
+          <div class="cf-mode-btn" id="wheelRiskHigh" onclick="wheelSetRisk('high')">🔴 High</div>
+        </div>
+      </div>
+      <div style="position:relative;width:240px;height:240px;margin:0 auto 16px;">
+        <canvas id="wheelCanvas" width="240" height="240"></canvas>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;background:var(--card);border:3px solid var(--gold);border-radius:50%;z-index:10;"></div>
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:1.5rem;z-index:10;">▼</div>
+      </div>
+      <div id="wheelResult" style="text-align:center;font-size:1.3rem;font-weight:700;min-height:32px;margin-bottom:16px;"></div>
+      <button class="btn-primary" style="width:100%;" id="wheelBtn" onclick="wheelSpin()">🎡 Spin</button>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -2157,7 +2418,13 @@ const DEFAULT_STATS = () => ({
     blackjack: { played: 0, wagered: 0 },
     coinflip:  { played: 0, wagered: 0 },
     keno:      { played: 0, wagered: 0 },
-    plinko:    { played: 0, wagered: 0 }
+    plinko:    { played: 0, wagered: 0 },
+    reme:      { played: 0, wagered: 0 },
+    slots:     { played: 0, wagered: 0 },
+    crash:     { played: 0, wagered: 0 },
+    dice:      { played: 0, wagered: 0 },
+    hilo:      { played: 0, wagered: 0 },
+    wheel:     { played: 0, wagered: 0 }
   }
 });
 let stats = DEFAULT_STATS();
@@ -2231,7 +2498,8 @@ function trackGame(gameType, bet, payout, isWin) {
     || DEV.minesForce !== 'random' || DEV.towerForce !== 'random'
     || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
-    || DEV.plinkoForce !== 'random';
+    || DEV.plinkoForce !== 'random' || DEV.remeForce !== 'random'
+    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random';
   if (devActive) return;
 
   // Award XP for every game played (based on wager)
@@ -2253,7 +2521,13 @@ async function resetStats() {
       blackjack: { played: 0, wagered: 0 },
       coinflip: { played: 0, wagered: 0 },
       keno: { played: 0, wagered: 0 },
-      plinko: { played: 0, wagered: 0 }
+      plinko: { played: 0, wagered: 0 },
+      reme: { played: 0, wagered: 0 },
+      slots: { played: 0, wagered: 0 },
+      crash: { played: 0, wagered: 0 },
+      dice: { played: 0, wagered: 0 },
+      hilo: { played: 0, wagered: 0 },
+      wheel: { played: 0, wagered: 0 }
     }
   };
   saveState();
@@ -3532,6 +3806,9 @@ function devGodToggle(cb) {
     DEV.cfForce = 'win';
     DEV.kenoForce = 'max';
     DEV.plinkoForce = 'edge';
+    DEV.remeForce = 'win';
+    DEV.slotsForce = 'win';
+    DEV.crashForce = 'win';
     loadDevInputs();
     toast('🔥 God Mode ON — you always win!', 'win');
   } else {
@@ -3542,6 +3819,9 @@ function devGodToggle(cb) {
     DEV.cfForce = 'random';
     DEV.kenoForce = 'random';
     DEV.plinkoForce = 'random';
+    DEV.remeForce = 'random';
+    DEV.slotsForce = 'random';
+    DEV.crashForce = 'random';
     loadDevInputs();
   }
 }
@@ -3571,6 +3851,7 @@ function devResetAll() {
   DEV.rouletteMode = 'random'; DEV.rouletteNum = 7; DEV.rouletteMult = 1;
   DEV.bjMode = 'random'; DEV.bjCard1 = ''; DEV.bjCard2 = ''; DEV.bjMult = 1;
   DEV.cfForce = 'random'; DEV.kenoForce = 'random'; DEV.plinkoForce = 'random';
+  DEV.remeForce = 'random'; DEV.slotsForce = 'random'; DEV.crashForce = 'random';
   devInfiniteBalance = false;
   loadDevInputs();
   toast('⟳ All rigging reset to normal', '');
@@ -3614,7 +3895,8 @@ function confirmResolve(result) {
 // ════════════════════════════════════════════════════════════
 const GAME_ICONS = {
   mines: '💣', tower: '🗼', roulette: '🎡',
-  blackjack: '🃏', coinflip: '🪙', keno: '🔢', plinko: '🔽'
+  blackjack: '🃏', coinflip: '🪙', keno: '🔢', plinko: '🔽',
+  reme: '🎱', slots: '🎰', crash: '💀', dice: '🎲', hilo: '🃏', wheel: '🎡'
 };
 
 async function pushWinToFeed(gameType, username, bet, payout) {
@@ -3674,7 +3956,8 @@ trackGame = function(gameType, bet, payout, isWin) {
     || DEV.minesForce !== 'random' || DEV.towerForce !== 'random'
     || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
-    || DEV.plinkoForce !== 'random';
+    || DEV.plinkoForce !== 'random' || DEV.remeForce !== 'random'
+    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random';
   if (devActive || !isWin) return;
   const username = currentUser?._username || null;
   const mult = bet > 0 ? payout / bet : 0;
@@ -3683,10 +3966,656 @@ trackGame = function(gameType, bet, payout, isWin) {
   }
 };
 
-</script>
-<script>
 // ════════════════════════════════════════════════════════════
-//  SUPABASE AUTH + BALANCE SYNC
+//  REME
+// ════════════════════════════════════════════════════════════
+let remeSpinning = false;
+
+function remeDigitSum(n) {
+  const s = Math.floor(n / 10) + (n % 10);
+  return s === 10 ? 0 : s;
+}
+
+window.remeSpin = function() {
+  if (remeSpinning) return;
+  const bet = parseFloat(document.getElementById('remeBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  remeSpinning = true;
+  const btn = document.getElementById('remeBtn');
+  btn.disabled = true;
+  document.getElementById('remeResult').textContent = '';
+  document.getElementById('remePlayerSpin').textContent = '?';
+  document.getElementById('remeHouseSpin').textContent = '?';
+  document.getElementById('remePlayerSum').textContent = 'spinning…';
+  document.getElementById('remeHouseSum').textContent = 'spinning…';
+
+  // Animate spinning
+  let ticks = 0;
+  const maxTicks = 18;
+  const iv = setInterval(() => {
+    document.getElementById('remePlayerSpin').textContent = Math.floor(Math.random() * 37);
+    document.getElementById('remeHouseSpin').textContent = Math.floor(Math.random() * 37);
+    ticks++;
+    if (ticks >= maxTicks) {
+      clearInterval(iv);
+      syncDevInputs();
+
+      // Determine results
+      let playerRaw, houseRaw;
+      if (DEV.godMode) {
+        // Give player a winning non-zero non-autolose result, house gets low number
+        playerRaw = [27, 18, 9, 36, 2, 3][Math.floor(Math.random() * 6)]; // sums to 9 or similar high
+        houseRaw = Math.floor(Math.random() * 10); // low result
+      } else {
+        playerRaw = Math.floor(Math.random() * 37);
+        houseRaw = Math.floor(Math.random() * 37);
+      }
+
+      const playerSum = remeDigitSum(playerRaw);
+      const houseSum = remeDigitSum(houseRaw);
+
+      document.getElementById('remePlayerSpin').textContent = playerRaw;
+      document.getElementById('remeHouseSpin').textContent = houseRaw;
+      document.getElementById('remePlayerSum').textContent = `digit sum: ${playerSum}`;
+      document.getElementById('remeHouseSum').textContent = `digit sum: ${houseSum}`;
+
+      const resultEl = document.getElementById('remeResult');
+      const AUTOLOSE = [1, 10, 29];
+      const JACKPOT_SPINS = [0, 19, 28];
+
+      let payout = 0;
+      let msg = '', color = '';
+
+      if (AUTOLOSE.includes(playerRaw)) {
+        msg = `💀 Auto-Lose! Spun ${playerRaw}.`;
+        color = 'var(--red)';
+        trackGame('reme', bet, 0, false);
+        toast(`💀 Auto-lose (spin ${playerRaw})`, 'lose');
+      } else if (JACKPOT_SPINS.includes(playerRaw) && !JACKPOT_SPINS.includes(houseRaw)) {
+        // Player gets 0, house doesn't → 3x
+        payout = bet * 3;
+        balance += payout; updateBalance();
+        msg = `🎱 JACKPOT! Digit 0 wins 3× → +${fmt(payout)}`;
+        color = 'var(--gold)';
+        trackGame('reme', bet, payout, true);
+        toast(`🎱 REME Jackpot! 3× → ${fmt(payout)}`, 'win');
+      } else if (JACKPOT_SPINS.includes(playerRaw) && JACKPOT_SPINS.includes(houseRaw)) {
+        // Both 0 → player loses
+        msg = `💀 Both got 0. House wins.`;
+        color = 'var(--red)';
+        trackGame('reme', bet, 0, false);
+        toast('💀 Both 0 — house wins!', 'lose');
+      } else if (playerSum === houseSum) {
+        msg = `🤝 Tie (${playerSum} vs ${houseSum}). House wins.`;
+        color = 'var(--red)';
+        trackGame('reme', bet, 0, false);
+        toast('Tie — house wins!', 'lose');
+      } else {
+        // Ranking: 1<2<3<4<5<6<7<8<9<0
+        const rank = [1,2,3,4,5,6,7,8,9,0];
+        const pr = rank.indexOf(playerSum);
+        const hr = rank.indexOf(houseSum);
+        if (pr > hr) {
+          payout = bet * 2;
+          balance += payout; updateBalance();
+          msg = `🏆 You win! ${playerSum} beats ${houseSum} → +${fmt(payout)}`;
+          color = 'var(--green)';
+          trackGame('reme', bet, payout, true);
+          toast(`🏆 Reme win! ${playerSum} > ${houseSum}`, 'win');
+        } else {
+          msg = `❌ House wins. ${houseSum} beats ${playerSum}.`;
+          color = 'var(--red)';
+          trackGame('reme', bet, 0, false);
+          toast(`❌ Lost. ${houseSum} > ${playerSum}`, 'lose');
+        }
+      }
+
+      resultEl.textContent = msg;
+      resultEl.style.color = color;
+      remeSpinning = false;
+      btn.disabled = false;
+    }
+  }, 80);
+};
+
+// ════════════════════════════════════════════════════════════
+//  SLOTS
+// ════════════════════════════════════════════════════════════
+const SLOT_SYMBOLS = ['🍒','🍋','🍊','🍇','⭐','7️⃣','💎'];
+const SLOT_WEIGHTS = [30, 25, 20, 15, 6, 3, 1]; // cherry most common, diamond rarest
+const SLOT_PAYOUTS = {
+  '💎💎💎': 100, '7️⃣7️⃣7️⃣': 50, '⭐⭐⭐': 20, '🍇🍇🍇': 15,
+  '🍊🍊🍊': 10, '🍋🍋🍋': 8, '🍒🍒🍒': 5
+};
+let slotsSpinning = false;
+
+function slotsPickSymbol() {
+  const total = SLOT_WEIGHTS.reduce((a,b) => a+b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < SLOT_SYMBOLS.length; i++) {
+    r -= SLOT_WEIGHTS[i];
+    if (r <= 0) return SLOT_SYMBOLS[i];
+  }
+  return SLOT_SYMBOLS[0];
+}
+
+window.slotsSpin = function() {
+  if (slotsSpinning) return;
+  const bet = parseFloat(document.getElementById('slotsBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  slotsSpinning = true;
+  document.getElementById('slotsBtn').disabled = true;
+  document.getElementById('slotsResult').textContent = '';
+  syncDevInputs();
+
+  const reels = [0,1,2].map(i => document.getElementById(`slotReel${i}`));
+  reels.forEach(r => r.classList.add('spinning'));
+
+  // Determine final symbols
+  let finals;
+  if (DEV.godMode) {
+    const winners = Object.keys(SLOT_PAYOUTS);
+    const pick = winners[Math.floor(Math.random() * winners.length)];
+    finals = pick.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || [pick[0], pick[1], pick[2]];
+    // Fallback: just triple cherry
+    if (finals.length < 3) finals = ['🍒','🍒','🍒'];
+  } else {
+    finals = [slotsPickSymbol(), slotsPickSymbol(), slotsPickSymbol()];
+  }
+
+  // Stagger stop animations
+  reels.forEach((reel, i) => {
+    setTimeout(() => {
+      reel.classList.remove('spinning');
+      // Animate through random symbols before landing
+      let ticks = 0;
+      const iv = setInterval(() => {
+        reel.textContent = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
+        ticks++;
+        if (ticks > 8) { clearInterval(iv); reel.textContent = finals[i]; }
+      }, 60);
+
+      if (i === 2) {
+        setTimeout(() => {
+          const key = finals.join('');
+          const resultEl = document.getElementById('slotsResult');
+          let payout = 0;
+
+          if (SLOT_PAYOUTS[key]) {
+            payout = bet * SLOT_PAYOUTS[key];
+            balance += payout; updateBalance();
+            resultEl.textContent = `🎉 ${finals.join('')} — ${SLOT_PAYOUTS[key]}× → +${fmt(payout)}`;
+            resultEl.style.color = 'var(--gold)';
+            toast(`🎰 ${SLOT_PAYOUTS[key]}×! Won ${fmt(payout)}`, 'win');
+            trackGame('slots', bet, payout, true);
+          } else if (finals[0] === finals[1] || finals[1] === finals[2] || finals[0] === finals[2]) {
+            // Any two matching
+            if (finals[0] === '🍒' || finals[1] === '🍒' || finals[2] === '🍒') {
+              const cherryCount = finals.filter(s => s === '🍒').length;
+              if (cherryCount >= 2) {
+                payout = bet * 2;
+                balance += payout; updateBalance();
+                resultEl.textContent = `🍒🍒 Two cherries — 2× → +${fmt(payout)}`;
+                resultEl.style.color = 'var(--gold)';
+                toast(`🍒 Two cherries! 2×`, 'win');
+                trackGame('slots', bet, payout, true);
+              } else {
+                payout = bet * 3;
+                balance += payout; updateBalance();
+                resultEl.textContent = `✨ Two matching — 3× → +${fmt(payout)}`;
+                resultEl.style.color = 'var(--gold)';
+                toast(`✨ Two matching! 3×`, 'win');
+                trackGame('slots', bet, payout, true);
+              }
+            } else {
+              payout = bet * 3;
+              balance += payout; updateBalance();
+              resultEl.textContent = `✨ Two matching — 3× → +${fmt(payout)}`;
+              resultEl.style.color = 'var(--gold)';
+              toast(`✨ Two matching! 3×`, 'win');
+              trackGame('slots', bet, payout, true);
+            }
+          } else {
+            resultEl.textContent = `No match. Lost ${fmt(bet)}.`;
+            resultEl.style.color = 'var(--red)';
+            toast(`❌ No match`, 'lose');
+            trackGame('slots', bet, 0, false);
+          }
+
+          slotsSpinning = false;
+          document.getElementById('slotsBtn').disabled = false;
+        }, 600);
+      }
+    }, 400 + i * 400);
+  });
+};
+
+// ════════════════════════════════════════════════════════════
+//  CRASH
+// ════════════════════════════════════════════════════════════
+let crashActive = false;
+let crashCashedOut = false;
+let crashMult = 1.0;
+let crashInterval = null;
+let crashCurrentBet = 0;
+let crashPoints = [];
+let crashHistory = [];
+
+function crashGetCrashPoint() {
+  // House edge ~4%: crash = 0.96 / random
+  const r = Math.random();
+  if (r < 0.04) return 1.0; // instant crash 4% of time
+  return Math.max(1.0, 0.96 / r);
+}
+
+function crashDrawCanvas() {
+  const canvas = document.getElementById('crashCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (crashPoints.length < 2) return;
+  ctx.beginPath();
+  ctx.strokeStyle = crashCashedOut ? 'var(--green)' : (crashActive ? '#00e676' : '#ff1744');
+  ctx.lineWidth = 2;
+  const maxMult = Math.max(crashMult * 1.1, 2);
+  crashPoints.forEach((p, i) => {
+    const x = (i / (crashPoints.length - 1 || 1)) * w;
+    const y = h - ((p - 1) / (maxMult - 1)) * h * 0.85 - 10;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+window.crashStart = function() {
+  if (crashActive) return;
+  const bet = parseFloat(document.getElementById('crashBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  crashCurrentBet = bet;
+  crashActive = true;
+  crashCashedOut = false;
+  crashMult = 1.0;
+  crashPoints = [1.0];
+  syncDevInputs();
+
+  const crashPoint = DEV.godMode ? 999 : crashGetCrashPoint();
+
+  document.getElementById('crashStartBtn').style.display = 'none';
+  document.getElementById('crashCashoutBtn').style.display = 'block';
+  document.getElementById('crashBet').disabled = true;
+  document.getElementById('crashStatus').textContent = 'Flying… cash out!';
+
+  const multEl = document.getElementById('crashMult');
+  multEl.style.color = 'var(--green)';
+
+  crashInterval = setInterval(() => {
+    crashMult += crashMult * 0.03;
+    crashPoints.push(crashMult);
+    multEl.textContent = crashMult.toFixed(2) + '×';
+    crashDrawCanvas();
+
+    if (crashMult >= crashPoint) {
+      clearInterval(crashInterval);
+      crashActive = false;
+      multEl.style.color = 'var(--red)';
+      multEl.textContent = crashMult.toFixed(2) + '× 💀';
+      document.getElementById('crashStatus').textContent = 'CRASHED!';
+      document.getElementById('crashStartBtn').style.display = 'block';
+      document.getElementById('crashCashoutBtn').style.display = 'none';
+      document.getElementById('crashBet').disabled = false;
+      toast(`💀 Crashed at ${crashMult.toFixed(2)}×`, 'lose');
+      trackGame('crash', crashCurrentBet, 0, false);
+      crashAddHistory(crashMult, false);
+    }
+  }, 100);
+};
+
+window.crashCashout = function() {
+  if (!crashActive || crashCashedOut) return;
+  clearInterval(crashInterval);
+  crashCashedOut = true;
+  crashActive = false;
+  const payout = crashCurrentBet * crashMult;
+  balance += payout; updateBalance();
+  document.getElementById('crashMult').style.color = 'var(--green)';
+  document.getElementById('crashStatus').textContent = `Cashed out at ${crashMult.toFixed(2)}×!`;
+  document.getElementById('crashStartBtn').style.display = 'block';
+  document.getElementById('crashCashoutBtn').style.display = 'none';
+  document.getElementById('crashBet').disabled = false;
+  toast(`✅ Cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
+  trackGame('crash', crashCurrentBet, payout, true);
+  crashAddHistory(crashMult, true);
+};
+
+function crashAddHistory(mult, cashed) {
+  crashHistory.unshift({ mult, cashed });
+  if (crashHistory.length > 10) crashHistory.pop();
+  const el = document.getElementById('crashHistory');
+  el.innerHTML = crashHistory.map(h => {
+    const cls = h.mult < 1.5 ? 'bust' : h.mult < 3 ? 'low' : h.mult < 10 ? 'mid' : 'high';
+    return `<div class="crash-hist ${cls}">${h.mult.toFixed(2)}×</div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  DICE
+// ════════════════════════════════════════════════════════════
+let diceSide = 'over';
+
+function diceSetSide(side) {
+  diceSide = side;
+  document.getElementById('diceOver').classList.toggle('selected', side === 'over');
+  document.getElementById('diceUnder').classList.toggle('selected', side === 'under');
+  diceUpdateSlider();
+}
+
+function diceUpdateSlider() {
+  const target = parseInt(document.getElementById('diceTarget').value);
+  document.getElementById('diceTargetLabel').textContent = target;
+  let chance, mult;
+  if (diceSide === 'over') {
+    chance = (100 - target) / 100;
+  } else {
+    chance = (target - 1) / 100;
+  }
+  chance = Math.max(0.01, Math.min(0.98, chance));
+  mult = (0.97 / chance);
+  document.getElementById('diceChanceLabel').textContent = Math.round(chance * 100) + '%';
+  document.getElementById('diceMultLabel').textContent = mult.toFixed(2) + '×';
+}
+
+window.diceRoll = function() {
+  const bet = parseFloat(document.getElementById('diceBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  syncDevInputs();
+
+  const target = parseInt(document.getElementById('diceTarget').value);
+  let roll;
+  if (DEV.godMode) {
+    roll = diceSide === 'over' ? Math.min(99, target + 1 + Math.floor(Math.random() * (99 - target))) : Math.max(1, Math.floor(Math.random() * (target - 1)) + 1);
+  } else {
+    roll = Math.floor(Math.random() * 100) + 1;
+  }
+
+  const resultEl = document.getElementById('diceResult');
+  const msgEl = document.getElementById('diceMsg');
+  resultEl.textContent = roll;
+
+  const won = diceSide === 'over' ? roll > target : roll < target;
+  let chance = diceSide === 'over' ? (100 - target) / 100 : (target - 1) / 100;
+  chance = Math.max(0.01, Math.min(0.98, chance));
+  const mult = 0.97 / chance;
+
+  if (won) {
+    const payout = bet * mult;
+    balance += payout; updateBalance();
+    resultEl.style.color = 'var(--green)';
+    msgEl.textContent = `✅ ${roll} is ${diceSide === 'over' ? 'over' : 'under'} ${target} — ${mult.toFixed(2)}× → +${fmt(payout)}`;
+    msgEl.style.color = 'var(--green)';
+    toast(`🎲 Won! ${mult.toFixed(2)}× → ${fmt(payout)}`, 'win');
+    trackGame('dice', bet, payout, true);
+  } else {
+    resultEl.style.color = 'var(--red)';
+    msgEl.textContent = `❌ ${roll} is not ${diceSide === 'over' ? 'over' : 'under'} ${target}. Lost ${fmt(bet)}.`;
+    msgEl.style.color = 'var(--red)';
+    toast(`❌ Rolled ${roll}, lost`, 'lose');
+    trackGame('dice', bet, 0, false);
+  }
+};
+
+diceUpdateSlider();
+
+// ════════════════════════════════════════════════════════════
+//  HI-LO
+// ════════════════════════════════════════════════════════════
+const HILO_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const HILO_SUITS = ['♠','♥','♦','♣'];
+const HILO_MULTS = [1, 1.5, 2.2, 3.2, 4.8, 7, 10, 15, 22, 32, 50, 75, 110];
+let hiloActive = false;
+let hiloStreak = 0;
+let hiloCurrentBet = 0;
+let hiloCurrentCard = null;
+let hiloCurrentCardVal = 0;
+
+function hiloPickCard() {
+  return {
+    rank: HILO_RANKS[Math.floor(Math.random() * HILO_RANKS.length)],
+    suit: HILO_SUITS[Math.floor(Math.random() * HILO_SUITS.length)]
+  };
+}
+
+function hiloCardVal(rank) { return HILO_RANKS.indexOf(rank); }
+
+function hiloRenderCard(card) {
+  const isRed = card.suit === '♥' || card.suit === '♦';
+  const el = document.getElementById('hiloCard');
+  el.style.color = isRed ? '#c0002a' : '#111';
+  el.innerHTML = `<div style="font-size:1.4rem;font-weight:900">${card.rank}</div><div style="font-size:1.2rem">${card.suit}</div>`;
+  document.getElementById('hiloCardLabel').textContent = `${card.rank}${card.suit}`;
+}
+
+window.hiloStart = function() {
+  const bet = parseFloat(document.getElementById('hiloBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  hiloCurrentBet = bet;
+  hiloStreak = 0;
+  hiloActive = true;
+  hiloCurrentCard = hiloPickCard();
+  hiloCurrentCardVal = hiloCardVal(hiloCurrentCard.rank);
+  hiloRenderCard(hiloCurrentCard);
+  document.getElementById('hiloStreak').textContent = '0';
+  document.getElementById('hiloMult').textContent = '1.00×';
+  document.getElementById('hiloMsg').textContent = 'Higher or lower?';
+  document.getElementById('hiloMsg').style.color = 'var(--muted)';
+  document.getElementById('hiloCashBtn').style.display = 'none';
+  document.getElementById('hiloBet').disabled = true;
+  document.getElementById('hiloHighBtn').disabled = false;
+  document.getElementById('hiloLowBtn').disabled = false;
+};
+
+window.hiloGuess = function(guess) {
+  if (!hiloActive) { toast('Start a new game first!', 'lose'); return; }
+  syncDevInputs();
+  const nextCard = hiloPickCard();
+  let nextVal = hiloCardVal(nextCard.rank);
+
+  if (DEV.godMode) {
+    // Force correct card
+    if (guess === 'high') nextVal = Math.min(12, hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal)));
+    else nextVal = Math.max(0, Math.floor(Math.random() * hiloCurrentCardVal));
+    nextCard.rank = HILO_RANKS[nextVal];
+  }
+
+  hiloRenderCard(nextCard);
+  const msgEl = document.getElementById('hiloMsg');
+
+  const won = (guess === 'high' && nextVal > hiloCurrentCardVal) || (guess === 'low' && nextVal < hiloCurrentCardVal);
+  const tie = nextVal === hiloCurrentCardVal;
+
+  if (tie) {
+    msgEl.textContent = '🤝 Tie — try again!';
+    msgEl.style.color = 'var(--gold)';
+    hiloCurrentCard = nextCard;
+    hiloCurrentCardVal = nextVal;
+    return;
+  }
+
+  if (won) {
+    hiloStreak++;
+    const mult = HILO_MULTS[Math.min(hiloStreak, HILO_MULTS.length - 1)];
+    document.getElementById('hiloStreak').textContent = hiloStreak;
+    document.getElementById('hiloMult').textContent = mult.toFixed(2) + '×';
+    msgEl.textContent = `✅ Correct! Streak: ${hiloStreak} 🔥`;
+    msgEl.style.color = 'var(--green)';
+    hiloCurrentCard = nextCard;
+    hiloCurrentCardVal = nextVal;
+    document.getElementById('hiloCashBtn').style.display = 'block';
+    if (hiloStreak >= HILO_MULTS.length - 1) hiloCashout();
+  } else {
+    msgEl.textContent = `❌ Wrong! Lost ${fmt(hiloCurrentBet)}.`;
+    msgEl.style.color = 'var(--red)';
+    toast(`❌ Hi-Lo failed on streak ${hiloStreak}`, 'lose');
+    trackGame('hilo', hiloCurrentBet, 0, false);
+    hiloReset();
+  }
+};
+
+window.hiloCashout = function() {
+  if (!hiloActive || hiloStreak === 0) return;
+  const mult = HILO_MULTS[Math.min(hiloStreak, HILO_MULTS.length - 1)];
+  const payout = hiloCurrentBet * mult;
+  balance += payout; updateBalance();
+  toast(`💰 Hi-Lo cashed out ${mult.toFixed(2)}× → ${fmt(payout)}`, 'win');
+  trackGame('hilo', hiloCurrentBet, payout, true);
+  document.getElementById('hiloMsg').textContent = `Cashed out ${mult.toFixed(2)}× → +${fmt(payout)}`;
+  document.getElementById('hiloMsg').style.color = 'var(--green)';
+  hiloReset();
+};
+
+function hiloReset() {
+  hiloActive = false;
+  hiloStreak = 0;
+  document.getElementById('hiloCashBtn').style.display = 'none';
+  document.getElementById('hiloBet').disabled = false;
+  document.getElementById('hiloHighBtn').disabled = false;
+  document.getElementById('hiloLowBtn').disabled = false;
+}
+
+// ════════════════════════════════════════════════════════════
+//  WHEEL OF FORTUNE
+// ════════════════════════════════════════════════════════════
+const WHEEL_RISKS = {
+  low:    { segments: [0,0.5,1,1.5,2,1,0.5,1,1.5,1,0,0.5,3,1,0.5,1,0.5,1,2,1], colors: ['#ff1744','#00e676','#f0c040','#00b0ff','#d500f9'] },
+  medium: { segments: [0,1,2,0,3,1,0,5,2,0,1,0,2,1,0,3,1,0,0,10], colors: ['#ff1744','#00e676','#f0c040','#00b0ff','#d500f9'] },
+  high:   { segments: [0,0,0,2,0,0,5,0,0,20,0,0,0,3,0,0,50,0,0,0], colors: ['#ff1744','#00e676','#f0c040','#00b0ff','#d500f9'] }
+};
+let wheelRisk = 'low';
+let wheelSpinning = false;
+let wheelAngle = 0;
+
+function wheelSetRisk(risk) {
+  wheelRisk = risk;
+  const idMap = { low: 'wheelRiskLow', medium: 'wheelRiskMed', high: 'wheelRiskHigh' };
+  ['low','medium','high'].forEach(r => document.getElementById(idMap[r]).classList.toggle('active', r === risk));
+  wheelDraw(0);
+}
+
+function wheelDraw(angle) {
+  const canvas = document.getElementById('wheelCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 120, cy = 120, r = 110;
+  const segs = WHEEL_RISKS[wheelRisk].segments;
+  const n = segs.length;
+  const arc = (Math.PI * 2) / n;
+  ctx.clearRect(0, 0, 240, 240);
+  const palette = ['#1a2a4a','#2a1a4a','#1a4a2a','#4a2a1a','#3a1a1a','#1a3a3a'];
+  segs.forEach((mult, i) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle + i * arc, angle + (i+1) * arc);
+    ctx.closePath();
+    ctx.fillStyle = palette[i % palette.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle + i * arc + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = mult === 0 ? '#ff4466' : mult >= 10 ? '#ffd700' : '#e8e0cc';
+    ctx.font = `bold ${mult >= 10 ? 11 : 10}px Rajdhani,sans-serif`;
+    ctx.fillText(mult === 0 ? 'x' : mult + '×', r - 8, 4);
+    ctx.restore();
+  });
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d0d1a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(240,192,64,.3)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+window.wheelSpin = function() {
+  if (wheelSpinning) return;
+  const bet = parseFloat(document.getElementById('wheelBet').value);
+  if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
+  if (!deductBet(bet)) return;
+  wheelSpinning = true;
+  document.getElementById('wheelBtn').disabled = true;
+  document.getElementById('wheelResult').textContent = '';
+  syncDevInputs();
+
+  const segs = WHEEL_RISKS[wheelRisk].segments;
+  const n = segs.length;
+
+  let targetIdx;
+  if (DEV.godMode) {
+    // Pick highest non-zero multiplier
+    let max = 0, maxI = 0;
+    segs.forEach((s, i) => { if (s > max) { max = s; maxI = i; } });
+    targetIdx = maxI;
+  } else {
+    targetIdx = Math.floor(Math.random() * n);
+  }
+
+  const arc = (Math.PI * 2) / n;
+  // Spin to land pointer (at top = -PI/2) on targetIdx
+  const targetAngle = -Math.PI/2 - (targetIdx * arc + arc/2);
+  const fullSpins = (5 + Math.floor(Math.random() * 5)) * Math.PI * 2;
+  const finalAngle = targetAngle - Math.floor((targetAngle + fullSpins) / (Math.PI * 2)) * Math.PI * 2;
+  let start = null;
+  const duration = 3500;
+  const startAngle = wheelAngle;
+
+  function animate(ts) {
+    if (!start) start = ts;
+    const elapsed = ts - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
+    const current = startAngle + (fullSpins + (finalAngle - startAngle)) * ease;
+    wheelAngle = current;
+    wheelDraw(current);
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      wheelAngle = finalAngle;
+      wheelDraw(finalAngle);
+      const mult = segs[targetIdx];
+      const resultEl = document.getElementById('wheelResult');
+      if (mult === 0) {
+        resultEl.textContent = `💀 Landed on 0× — lost ${fmt(bet)}`;
+        resultEl.style.color = 'var(--red)';
+        toast('💀 Wheel hit 0×', 'lose');
+        trackGame('wheel', bet, 0, false);
+      } else {
+        const payout = bet * mult;
+        balance += payout; updateBalance();
+        resultEl.textContent = `🎡 ${mult}× — won ${fmt(payout)}!`;
+        resultEl.style.color = mult >= 10 ? 'var(--gold)' : 'var(--green)';
+        toast(`🎡 ${mult}× → ${fmt(payout)}`, 'win');
+        trackGame('wheel', bet, payout, true);
+      }
+      wheelSpinning = false;
+      document.getElementById('wheelBtn').disabled = false;
+    }
+  }
+  requestAnimationFrame(animate);
+};
+
+// Init wheel draw
+wheelDraw(0);
+
+
 // ════════════════════════════════════════════════════════════
 const SUPABASE_URL = "https://nuojaxirqwdrsbtfdpkd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51b2pheGlycXdkcnNidGZkcGtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NjczNzEsImV4cCI6MjA5NjM0MzM3MX0.oBJAip0gawtUl2XHiWQraTae7TYehANyW0PujkJEQ5M";
@@ -4290,7 +5219,7 @@ async function checkDailyBonus() {
 //  MINI FEED (per-game panel)
 // ════════════════════════════════════════════════════════════
 const _mfTabs = {}; // panel -> 'lucky' | 'highwager'
-const PANELS = ['mines','tower','roulette','blackjack','coinflip','keno','plinko'];
+const PANELS = ['mines','tower','roulette','blackjack','coinflip','keno','plinko','reme','slots','crash','dice','hilo','wheel'];
 
 function setMfTab(panel, tab) {
   _mfTabs[panel] = tab;
