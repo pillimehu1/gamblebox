@@ -1201,8 +1201,145 @@
     color:var(--text); font-family:'Rajdhani',sans-serif; font-weight:700;
     border-radius:8px; padding:11px; cursor:pointer;
   }
+  /* ── MOBILE BOTTOM NAV ── */
+  @media(max-width:600px) {
+    .nav-tabs { display:none !important; }
+    .mobile-bottom-nav {
+      display:flex; position:fixed; bottom:0; left:0; right:0; z-index:90;
+      background:rgba(5,5,8,0.97); border-top:1px solid var(--border);
+      backdrop-filter:blur(12px);
+      overflow-x:auto; scrollbar-width:none;
+      padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+      gap:2px;
+    }
+    .mobile-bottom-nav::-webkit-scrollbar { display:none; }
+    .mbn-btn {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:2px; min-width:52px; padding:6px 4px; border-radius:10px;
+      cursor:pointer; border:none; background:transparent;
+      font-family:'Rajdhani',sans-serif; flex-shrink:0;
+      transition:all .18s;
+    }
+    .mbn-btn .mbn-icon { font-size:1.1rem; line-height:1; }
+    .mbn-btn .mbn-label { font-size:.55rem; font-weight:700; color:var(--muted); letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+    .mbn-btn.active .mbn-label { color:var(--gold); }
+    .mbn-btn.active { background:rgba(240,192,64,.1); }
+    main { padding-bottom:calc(80px + env(safe-area-inset-bottom)) !important; }
+  }
+  @media(min-width:601px) {
+    .mobile-bottom-nav { display:none; }
+  }
+
+  /* ── PROVABLY FAIR MODAL ── */
+  .pf-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
+    z-index:600; align-items:center; justify-content:center; padding:20px;
+  }
+  .pf-overlay.open { display:flex; }
+  .pf-panel {
+    background:#0e0e1a; border:1px solid rgba(0,176,255,.4);
+    border-radius:20px; padding:28px; width:min(520px,100%);
+    box-shadow:0 0 60px rgba(0,176,255,.12); animation:fadeIn .3s ease;
+  }
+  .pf-title {
+    font-family:'Cinzel Decorative',cursive; font-size:.95rem; color:var(--blue);
+    margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .pf-subtitle { font-size:.75rem; color:var(--muted); margin-bottom:20px; }
+  .pf-field { margin-bottom:14px; }
+  .pf-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; display:block; }
+  .pf-input {
+    width:100%; background:#12121e; border:1px solid rgba(255,255,255,.1);
+    color:var(--text); font-family:'Rajdhani',sans-serif; font-size:.9rem;
+    border-radius:8px; padding:9px 12px; outline:none;
+    transition:border-color .2s; font-weight:600;
+  }
+  .pf-input:focus { border-color:var(--blue); }
+  .pf-mono {
+    width:100%; background:#080810; border:1px solid rgba(255,255,255,.07);
+    color:rgba(0,176,255,.8); font-family:monospace; font-size:.75rem;
+    border-radius:8px; padding:9px 12px; word-break:break-all; line-height:1.5;
+    min-height:44px;
+  }
+  .pf-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .pf-btn {
+    background:rgba(0,176,255,.12); border:1px solid rgba(0,176,255,.3);
+    color:var(--blue); font-family:'Rajdhani',sans-serif; font-weight:700;
+    font-size:.8rem; border-radius:7px; padding:7px 14px; cursor:pointer;
+    transition:all .15s; white-space:nowrap;
+  }
+  .pf-btn:hover { background:rgba(0,176,255,.22); }
+  .pf-result { margin-top:14px; font-size:.8rem; color:var(--muted); line-height:1.6; }
+  .pf-result .ok { color:var(--green); font-weight:700; }
+  .pf-result .fail { color:var(--red); font-weight:700; }
+  .pf-separator { height:1px; background:rgba(255,255,255,.06); margin:16px 0; }
 </style>
-</head>
+
+<!-- ── MOBILE BOTTOM NAV ── -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <button class="mbn-btn active" onclick="showTab('lobby')" id="mbn-lobby"><span class="mbn-icon">🏠</span><span class="mbn-label">Lobby</span></button>
+  <button class="mbn-btn" onclick="showTab('mines')" id="mbn-mines"><span class="mbn-icon">💣</span><span class="mbn-label">Mines</span></button>
+  <button class="mbn-btn" onclick="showTab('tower')" id="mbn-tower"><span class="mbn-icon">🗼</span><span class="mbn-label">Tower</span></button>
+  <button class="mbn-btn" onclick="showTab('roulette')" id="mbn-roulette"><span class="mbn-icon">🎡</span><span class="mbn-label">Roulette</span></button>
+  <button class="mbn-btn" onclick="showTab('blackjack')" id="mbn-blackjack"><span class="mbn-icon">🃏</span><span class="mbn-label">BJ</span></button>
+  <button class="mbn-btn" onclick="showTab('coinflip')" id="mbn-coinflip"><span class="mbn-icon">🪙</span><span class="mbn-label">Flip</span></button>
+  <button class="mbn-btn" onclick="showTab('keno')" id="mbn-keno"><span class="mbn-icon">🔢</span><span class="mbn-label">Keno</span></button>
+  <button class="mbn-btn" onclick="showTab('plinko')" id="mbn-plinko"><span class="mbn-icon">🔽</span><span class="mbn-label">Plinko</span></button>
+  <button class="mbn-btn" onclick="showTab('reme')" id="mbn-reme"><span class="mbn-icon">🎱</span><span class="mbn-label">Reme</span></button>
+  <button class="mbn-btn" onclick="showTab('slots')" id="mbn-slots"><span class="mbn-icon">🎰</span><span class="mbn-label">Slots</span></button>
+  <button class="mbn-btn" onclick="showTab('crash')" id="mbn-crash"><span class="mbn-icon">💀</span><span class="mbn-label">Crash</span></button>
+  <button class="mbn-btn" onclick="showTab('dice')" id="mbn-dice"><span class="mbn-icon">🎲</span><span class="mbn-label">Dice</span></button>
+  <button class="mbn-btn" onclick="showTab('hilo')" id="mbn-hilo"><span class="mbn-icon">🃏</span><span class="mbn-label">Hi-Lo</span></button>
+  <button class="mbn-btn" onclick="showTab('wheel')" id="mbn-wheel"><span class="mbn-icon">🎡</span><span class="mbn-label">Wheel</span></button>
+</nav>
+
+<!-- ── PROVABLY FAIR MODAL ── -->
+<div class="pf-overlay" id="pfOverlay">
+  <div class="pf-panel">
+    <div class="pf-title">
+      <span>🔐 Provably Fair</span>
+      <button class="dev-close" onclick="closePF()">✕</button>
+    </div>
+    <div class="pf-subtitle">Verify any result is fair. Set your client seed, then verify after the game.</div>
+
+    <div class="pf-field">
+      <label class="pf-label">Your Client Seed</label>
+      <div class="pf-row">
+        <input type="text" class="pf-input" id="pfClientSeed" placeholder="Enter your own seed or use random" style="flex:1">
+        <button class="pf-btn" onclick="pfRandomSeed()">🎲 Random</button>
+      </div>
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Server Seed Hash (SHA-256 of server seed)</label>
+      <div class="pf-mono" id="pfServerSeedHash">Click "New Seed Pair" to generate</div>
+    </div>
+    <div class="pf-row" style="margin-bottom:16px;">
+      <button class="pf-btn" onclick="pfNewPair()">⟳ New Seed Pair</button>
+      <button class="pf-btn" onclick="pfCopySeedHash()">📋 Copy Hash</button>
+    </div>
+
+    <div class="pf-separator"></div>
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Verify a Past Result</div>
+
+    <div class="pf-field">
+      <label class="pf-label">Server Seed (revealed after use)</label>
+      <input type="text" class="pf-input" id="pfVerifyServer" placeholder="Paste server seed here">
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Client Seed Used</label>
+      <input type="text" class="pf-input" id="pfVerifyClient" placeholder="Paste client seed used">
+    </div>
+    <div class="pf-field">
+      <label class="pf-label">Nonce (game round number)</label>
+      <input type="number" class="pf-input" id="pfVerifyNonce" placeholder="e.g. 1" min="0">
+    </div>
+    <div class="pf-row">
+      <button class="pf-btn" onclick="pfVerify()">✓ Verify</button>
+    </div>
+    <div class="pf-result" id="pfResult"></div>
+  </div>
+</div>
 
 <!-- ── LOADING SCREEN (shown until Supabase session resolves) ── -->
 <div id="rcLoadingScreen">
@@ -1279,6 +1416,7 @@
     <button class="hdr-btn hdr-btn-stats" onclick="openStats()" title="Stats">📊</button>
     <button class="hdr-btn hdr-btn-lb" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
     <button class="hdr-btn hdr-btn-tips" onclick="openTipLog()" title="Tip Log">💸</button>
+    <button class="hdr-btn" style="border-color:rgba(0,176,255,.35);color:rgba(0,176,255,.7);" onclick="openPF()" title="Provably Fair">🔐</button>
     <button class="hdr-btn hdr-btn-dev" id="devBtn" onclick="openDev()" title="Dev Panel">⚙️</button>
     <button class="hdr-btn hdr-btn-add" onclick="openModal()">+ Add Funds</button>
     <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
@@ -1648,6 +1786,86 @@
             <option value="random">Random</option>
             <option value="edge">Force Edge (Max Win)</option>
             <option value="center">Force Center (Lose)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- REME -->
+      <div class="dev-section">
+        <div class="dev-section-title">🎱 Reme — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devRemeForce">
+            <option value="random">Random</option>
+            <option value="win">Always Win</option>
+            <option value="lose">Always Lose</option>
+            <option value="jackpot">Force Jackpot (0)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SLOTS -->
+      <div class="dev-section">
+        <div class="dev-section-title">🎰 Slots — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devSlotsForce">
+            <option value="random">Random</option>
+            <option value="win">Force Any Win</option>
+            <option value="jackpot">Force Jackpot (💎💎💎)</option>
+            <option value="lose">Force No Match</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- CRASH -->
+      <div class="dev-section">
+        <div class="dev-section-title">💀 Crash — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devCrashForce">
+            <option value="random">Random</option>
+            <option value="high">Force High (999×)</option>
+            <option value="instant">Force Instant Crash</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- DICE -->
+      <div class="dev-section">
+        <div class="dev-section-title">🎲 Dice — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devDiceForce">
+            <option value="random">Random</option>
+            <option value="win">Always Win</option>
+            <option value="lose">Always Lose</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- HILO -->
+      <div class="dev-section">
+        <div class="dev-section-title">🃏 Hi-Lo — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devHiloForce">
+            <option value="random">Random</option>
+            <option value="win">Always Win</option>
+            <option value="lose">Always Lose</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- WHEEL -->
+      <div class="dev-section">
+        <div class="dev-section-title">🎡 Wheel — Rigging</div>
+        <div class="dev-row">
+          <span class="dev-label">Force result</span>
+          <select class="dev-select" id="devWheelForce">
+            <option value="random">Random</option>
+            <option value="max">Force Max Multiplier</option>
+            <option value="zero">Force 0× (Lose)</option>
           </select>
         </div>
       </div>
@@ -2227,6 +2445,16 @@
         <div style="margin-top:2px;color:var(--gold);">Jackpot 3× spins: 0, 19, 28</div>
       </div>
       <button class="btn-primary" style="width:100%;" id="remeBtn" onclick="remeSpin()">Spin</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_reme_lucky" onclick="setMfTab('reme','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_reme_highwager" onclick="setMfTab('reme','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_reme"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2266,6 +2494,16 @@
         </div>
       </div>
       <button class="btn-primary" style="width:100%;" id="slotsBtn" onclick="slotsSpin()">🎰 Spin</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_slots_lucky" onclick="setMfTab('slots','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_slots_highwager" onclick="setMfTab('slots','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_slots"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2289,11 +2527,26 @@
           <div id="crashStatus" style="font-size:.8rem;color:var(--muted);">Place your bet and start</div>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-size:.8rem;color:var(--muted);white-space:nowrap;">Auto cash-out at</span>
+        <input type="number" class="bet-input" id="crashAutoCashout" value="" min="1.01" step="0.01" placeholder="e.g. 2.00" style="width:90px;">
+        <span style="font-size:.75rem;color:var(--muted)">× (leave blank to manual)</span>
+      </div>
       <div style="display:flex;gap:10px;">
         <button class="btn-primary" style="flex:2;" id="crashStartBtn" onclick="crashStart()">🚀 Start</button>
         <button class="btn-secondary" style="flex:1;border-color:var(--red);color:var(--red);display:none;" id="crashCashoutBtn" onclick="crashCashout()">Cash Out</button>
       </div>
       <div id="crashHistory" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;"></div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_crash_lucky" onclick="setMfTab('crash','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_crash_highwager" onclick="setMfTab('crash','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_crash"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2328,6 +2581,16 @@
       </div>
       <div id="diceMsg" style="text-align:center;font-size:1rem;font-weight:700;min-height:24px;margin-bottom:12px;"></div>
       <button class="btn-primary" style="width:100%;" id="diceBtn" onclick="diceRoll()">Roll Dice</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_dice_lucky" onclick="setMfTab('dice','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_dice_highwager" onclick="setMfTab('dice','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_dice"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2361,6 +2624,16 @@
         <button class="btn-primary" style="flex:1;display:none;border:2px solid var(--green);background:transparent;color:var(--green);" id="hiloCashBtn" onclick="hiloCashout()">💰 Cash Out</button>
         <button class="btn-secondary" style="flex:1;" id="hiloStartBtn" onclick="hiloStart()">New Game</button>
       </div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_hilo_lucky" onclick="setMfTab('hilo','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_hilo_highwager" onclick="setMfTab('hilo','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_hilo"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2392,6 +2665,16 @@
       </div>
       <div id="wheelResult" style="text-align:center;font-size:1.3rem;font-weight:700;min-height:32px;margin-bottom:16px;"></div>
       <button class="btn-primary" style="width:100%;" id="wheelBtn" onclick="wheelSpin()">🎡 Spin</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_wheel_lucky" onclick="setMfTab('wheel','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_wheel_highwager" onclick="setMfTab('wheel','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_wheel"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2499,7 +2782,9 @@ function trackGame(gameType, bet, payout, isWin) {
     || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
     || DEV.plinkoForce !== 'random' || DEV.remeForce !== 'random'
-    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random';
+    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random'
+    || DEV.diceForce !== 'random' || DEV.hiloForce !== 'random'
+    || DEV.wheelForce !== 'random';
   if (devActive) return;
 
   // Award XP for every game played (based on wager)
@@ -2566,6 +2851,10 @@ function showTab(id){
   const tabs=[...document.querySelectorAll('.tab')];
   const names=['lobby','mines','tower','roulette','blackjack','coinflip','keno','plinko','reme','slots','crash','dice','hilo','wheel'];
   tabs[names.indexOf(id)]?.classList.add('active');
+  // Sync mobile bottom nav
+  document.querySelectorAll('.mbn-btn').forEach(b=>b.classList.remove('active'));
+  const mbn=document.getElementById('mbn-'+id);
+  if(mbn){ mbn.classList.add('active'); mbn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
 }
 
 // ── TOAST ──
@@ -3752,6 +4041,12 @@ function loadDevInputs() {
   document.getElementById('devCfForce').value = DEV.cfForce;
   document.getElementById('devKenoForce').value = DEV.kenoForce;
   document.getElementById('devPlinkoForce').value = DEV.plinkoForce;
+  document.getElementById('devRemeForce').value = DEV.remeForce;
+  document.getElementById('devSlotsForce').value = DEV.slotsForce;
+  document.getElementById('devCrashForce').value = DEV.crashForce;
+  document.getElementById('devDiceForce').value = DEV.diceForce;
+  document.getElementById('devHiloForce').value = DEV.hiloForce;
+  document.getElementById('devWheelForce').value = DEV.wheelForce;
   
   document.getElementById('devGodMode').checked = DEV.godMode;
   document.getElementById('devGodLabel').textContent = DEV.godMode ? 'ON 🔥' : 'Off';
@@ -3777,6 +4072,12 @@ function syncDevInputs() {
   DEV.cfForce      = document.getElementById('devCfForce').value;
   DEV.kenoForce    = document.getElementById('devKenoForce').value;
   DEV.plinkoForce  = document.getElementById('devPlinkoForce').value;
+  DEV.remeForce    = document.getElementById('devRemeForce').value;
+  DEV.slotsForce   = document.getElementById('devSlotsForce').value;
+  DEV.crashForce   = document.getElementById('devCrashForce').value;
+  DEV.diceForce    = document.getElementById('devDiceForce').value;
+  DEV.hiloForce    = document.getElementById('devHiloForce').value;
+  DEV.wheelForce   = document.getElementById('devWheelForce').value;
 }
 
 let drMode = document.getElementById('devRouletteMode');
@@ -3810,7 +4111,10 @@ function devGodToggle(cb) {
     DEV.plinkoForce = 'edge';
     DEV.remeForce = 'win';
     DEV.slotsForce = 'win';
-    DEV.crashForce = 'win';
+    DEV.crashForce = 'high';
+    DEV.diceForce = 'win';
+    DEV.hiloForce = 'win';
+    DEV.wheelForce = 'max';
     loadDevInputs();
     toast('🔥 God Mode ON — you always win!', 'win');
   } else {
@@ -3824,6 +4128,9 @@ function devGodToggle(cb) {
     DEV.remeForce = 'random';
     DEV.slotsForce = 'random';
     DEV.crashForce = 'random';
+    DEV.diceForce = 'random';
+    DEV.hiloForce = 'random';
+    DEV.wheelForce = 'random';
     loadDevInputs();
   }
 }
@@ -3854,6 +4161,7 @@ function devResetAll() {
   DEV.bjMode = 'random'; DEV.bjCard1 = ''; DEV.bjCard2 = ''; DEV.bjMult = 1;
   DEV.cfForce = 'random'; DEV.kenoForce = 'random'; DEV.plinkoForce = 'random';
   DEV.remeForce = 'random'; DEV.slotsForce = 'random'; DEV.crashForce = 'random';
+  DEV.diceForce = 'random'; DEV.hiloForce = 'random'; DEV.wheelForce = 'random';
   devInfiniteBalance = false;
   loadDevInputs();
   toast('⟳ All rigging reset to normal', '');
@@ -3959,7 +4267,9 @@ trackGame = function(gameType, bet, payout, isWin) {
     || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
     || DEV.plinkoForce !== 'random' || DEV.remeForce !== 'random'
-    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random';
+    || DEV.slotsForce !== 'random' || DEV.crashForce !== 'random'
+    || DEV.diceForce !== 'random' || DEV.hiloForce !== 'random'
+    || DEV.wheelForce !== 'random';
   if (devActive || !isWin) return;
   const username = currentUser?._username || null;
   const mult = bet > 0 ? payout / bet : 0;
@@ -4005,10 +4315,17 @@ window.remeSpin = function() {
 
       // Determine results
       let playerRaw, houseRaw;
-      if (DEV.godMode) {
+      const remeForce = DEV.godMode ? 'win' : DEV.remeForce;
+      if (remeForce === 'jackpot') {
+        playerRaw = 19; // digit sum 10=0, jackpot
+        houseRaw = 5;
+      } else if (remeForce === 'win') {
         // Player gets digit sum 9 (guaranteed highest), house gets digit sum 1
         playerRaw = [9, 18, 27, 36][Math.floor(Math.random() * 4)]; // all sum to 9
         houseRaw = [2, 3, 4, 5, 6, 7][Math.floor(Math.random() * 6)]; // sums 2-6, always loses to 9
+      } else if (remeForce === 'lose') {
+        playerRaw = 1; // auto-lose spin
+        houseRaw = 5;
       } else {
         playerRaw = Math.floor(Math.random() * 37);
         houseRaw = Math.floor(Math.random() * 37);
@@ -4117,13 +4434,19 @@ window.slotsSpin = function() {
 
   // Determine final symbols
   let finals;
-  if (DEV.godMode) {
-    const winnerKeys = Object.keys(SLOT_PAYOUTS);
-    const pick = winnerKeys[Math.floor(Math.random() * winnerKeys.length)];
-    // Split by known symbols instead of unreliable regex
-    finals = SLOT_SYMBOLS.filter(s => pick.includes(s));
-    if (finals.length === 1) finals = [finals[0], finals[0], finals[0]];
-    if (finals.length < 3) finals = ['🍒','🍒','🍒'];
+  const slotsForce = DEV.godMode ? 'win' : DEV.slotsForce;
+  if (slotsForce === 'jackpot') {
+    finals = ['💎','💎','💎'];
+  } else if (slotsForce === 'win') {
+    // Pick a random winning combo using array keys to avoid emoji splitting
+    const winCombos = [
+      ['💎','💎','💎'],['7️⃣','7️⃣','7️⃣'],['⭐','⭐','⭐'],
+      ['🍇','🍇','🍇'],['🍊','🍊','🍊'],['🍋','🍋','🍋'],['🍒','🍒','🍒']
+    ];
+    finals = winCombos[Math.floor(Math.random() * winCombos.length)];
+  } else if (slotsForce === 'lose') {
+    // Guarantee no two match
+    finals = ['🍒','🍋','🍊'];
   } else {
     finals = [slotsPickSymbol(), slotsPickSymbol(), slotsPickSymbol()];
   }
@@ -4247,7 +4570,19 @@ window.crashStart = function() {
   crashPoints = [1.0];
   syncDevInputs();
 
-  const crashPoint = DEV.godMode ? 999 : crashGetCrashPoint();
+  const crashForce = DEV.crashForce;
+  let crashPoint;
+  if (DEV.godMode || crashForce === 'high') {
+    crashPoint = 999;
+  } else if (crashForce === 'instant') {
+    crashPoint = 1.0;
+  } else {
+    crashPoint = crashGetCrashPoint();
+  }
+
+  // Read auto-cashout target
+  const autoCashoutVal = parseFloat(document.getElementById('crashAutoCashout').value);
+  const autoCashoutTarget = (!isNaN(autoCashoutVal) && autoCashoutVal > 1.0) ? autoCashoutVal : null;
 
   document.getElementById('crashStartBtn').style.display = 'none';
   document.getElementById('crashCashoutBtn').style.display = 'block';
@@ -4262,6 +4597,24 @@ window.crashStart = function() {
     crashPoints.push(crashMult);
     multEl.textContent = crashMult.toFixed(2) + '×';
     crashDrawCanvas();
+
+    // Auto cashout check
+    if (autoCashoutTarget && crashMult >= autoCashoutTarget && !crashCashedOut) {
+      clearInterval(crashInterval);
+      crashCashedOut = true;
+      crashActive = false;
+      const payout = crashCurrentBet * crashMult;
+      balance += payout; updateBalance();
+      multEl.style.color = 'var(--green)';
+      document.getElementById('crashStatus').textContent = `Auto cashed out at ${crashMult.toFixed(2)}×!`;
+      document.getElementById('crashStartBtn').style.display = 'block';
+      document.getElementById('crashCashoutBtn').style.display = 'none';
+      document.getElementById('crashBet').disabled = false;
+      toast(`🤖 Auto cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
+      trackGame('crash', crashCurrentBet, payout, true);
+      crashAddHistory(crashMult, true);
+      return;
+    }
 
     if (crashMult >= crashPoint) {
       clearInterval(crashInterval);
@@ -4341,8 +4694,11 @@ window.diceRoll = function() {
 
   const target = parseInt(document.getElementById('diceTarget').value);
   let roll;
-  if (DEV.godMode) {
+  const diceForce = DEV.godMode ? 'win' : DEV.diceForce;
+  if (diceForce === 'win') {
     roll = diceSide === 'over' ? Math.min(99, target + 1 + Math.floor(Math.random() * (99 - target))) : Math.max(1, Math.floor(Math.random() * (target - 1)) + 1);
+  } else if (diceForce === 'lose') {
+    roll = diceSide === 'over' ? Math.max(1, Math.floor(Math.random() * target)) : Math.min(99, target + Math.floor(Math.random() * (100 - target)));
   } else {
     roll = Math.floor(Math.random() * 100) + 1;
   }
@@ -4432,10 +4788,16 @@ window.hiloGuess = function(guess) {
   const nextCard = hiloPickCard();
   let nextVal = hiloCardVal(nextCard.rank);
 
-  if (DEV.godMode) {
+  const hiloForce = DEV.hiloForce;
+  if (DEV.godMode || hiloForce === 'win') {
     // Force correct card
     if (guess === 'high') nextVal = Math.min(12, hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal)));
     else nextVal = Math.max(0, Math.floor(Math.random() * hiloCurrentCardVal));
+    nextCard.rank = HILO_RANKS[nextVal];
+  } else if (hiloForce === 'lose') {
+    // Force wrong card (or tie which re-tries — just force opposite)
+    if (guess === 'high') nextVal = Math.max(0, Math.floor(Math.random() * hiloCurrentCardVal));
+    else nextVal = Math.min(12, hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal)));
     nextCard.rank = HILO_RANKS[nextVal];
   }
 
@@ -4577,11 +4939,16 @@ window.wheelSpin = function() {
   const n = segs.length;
 
   let targetIdx;
-  if (DEV.godMode) {
+  const wheelForce = DEV.wheelForce;
+  if (DEV.godMode || wheelForce === 'max') {
     // Pick highest non-zero multiplier
     let max = 0, maxI = 0;
     segs.forEach((s, i) => { if (s > max) { max = s; maxI = i; } });
     targetIdx = maxI;
+  } else if (wheelForce === 'zero') {
+    // Find first 0 segment
+    targetIdx = segs.indexOf(0);
+    if (targetIdx === -1) targetIdx = Math.floor(Math.random() * n);
   } else {
     targetIdx = Math.floor(Math.random() * n);
   }
@@ -5330,10 +5697,93 @@ loadWinsFeed = async function() {
     }
   });
 
-  // Load wins feed now that sb is ready, refresh every 30s only when tab is visible
+  // Load wins feed now that sb is ready
+  // Use Supabase Realtime instead of polling
   loadWinsFeed();
-  setInterval(() => { if (!document.hidden) loadWinsFeed(); }, 30000);
+  const _wfChannel = sb.channel('win_feed_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'win_feed' }, () => {
+      loadWinsFeed();
+      // Also refresh the active game panel's mini feed
+      const activePanel = PANELS.find(p => document.getElementById(`panel-${p}`)?.classList.contains('active'));
+      if (activePanel) loadMiniFeed(activePanel);
+    })
+    .subscribe();
 })();
+
+// ════════════════════════════════════════════════════════════
+//  PROVABLY FAIR SYSTEM
+// ════════════════════════════════════════════════════════════
+let _pfServerSeed = '';
+let _pfServerSeedHash = '';
+let _pfClientSeed = '';
+let _pfNonce = 0;
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function pfNewPair() {
+  // Generate random server seed and hash it
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  _pfServerSeed = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+  _pfServerSeedHash = await sha256(_pfServerSeed);
+  document.getElementById('pfServerSeedHash').textContent = _pfServerSeedHash;
+  document.getElementById('pfResult').innerHTML = '<span style="color:var(--muted)">New seed pair generated. Play a game, then verify below.</span>';
+}
+
+function pfRandomSeed() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  const seed = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+  document.getElementById('pfClientSeed').value = seed;
+  _pfClientSeed = seed;
+}
+
+function pfCopySeedHash() {
+  const hash = document.getElementById('pfServerSeedHash').textContent;
+  navigator.clipboard.writeText(hash).then(() => toast('📋 Hash copied', '')).catch(() => {});
+}
+
+async function pfVerify() {
+  const serverSeed = document.getElementById('pfVerifyServer').value.trim();
+  const clientSeed = document.getElementById('pfVerifyClient').value.trim();
+  const nonce = parseInt(document.getElementById('pfVerifyNonce').value) || 0;
+  const resultEl = document.getElementById('pfResult');
+  if (!serverSeed || !clientSeed) {
+    resultEl.innerHTML = '<span class="fail">Please fill in server seed and client seed.</span>';
+    return;
+  }
+  const computedHash = await sha256(serverSeed);
+  const combined = await sha256(`${serverSeed}:${clientSeed}:${nonce}`);
+  // Convert first 8 hex chars to a float 0-1
+  const roll = parseInt(combined.slice(0,8), 16) / 0xffffffff;
+  resultEl.innerHTML = `
+    <div><b>Server Seed Hash:</b> <code style="word-break:break-all">${computedHash}</code></div>
+    <div style="margin-top:6px"><b>Combined Hash:</b> <code style="word-break:break-all">${combined}</code></div>
+    <div style="margin-top:6px"><b>Result float (0–1):</b> <code>${roll.toFixed(8)}</code></div>
+    <div style="margin-top:10px; font-size:.75rem; color:var(--muted)">
+      Match this hash against the pre-committed server seed hash shown before the game to verify fairness.
+      The result float maps to the game outcome (e.g. 0.00–0.49 = heads, 0.50–0.99 = tails).
+    </div>
+  `;
+}
+
+// Active seed pair shown in modal when opened
+function openPF() {
+  document.getElementById('pfOverlay').classList.add('open');
+  if (!_pfServerSeedHash) pfNewPair();
+  if (!_pfClientSeed) {
+    pfRandomSeed();
+  } else {
+    document.getElementById('pfClientSeed').value = _pfClientSeed;
+  }
+}
+function closePF() { document.getElementById('pfOverlay').classList.remove('open'); }
+document.getElementById('pfOverlay').addEventListener('click', function(e) { if (e.target === this) closePF(); });
+// Auto-init seed on page load
+pfNewPair();
 </script>
 </body>
 </html>
