@@ -1716,7 +1716,7 @@
 <div class="admin-overlay" id="adminOverlay">
   <div class="admin-panel">
     <div class="admin-panel-header">
-      <div class="admin-title">👑 Admin Panel <span class="admin-badge">Owner</span></div>
+      <div class="admin-title">👑 Admin Panel <span class="admin-badge" id="adminBadge">Admin</span></div>
       <button class="dev-close" onclick="closeAdmin()">✕</button>
     </div>
     <div class="admin-body">
@@ -1921,6 +1921,14 @@
         <div class="stat-val win-color" id="statsWins">0</div>
       </div>
       <div class="stat-card">
+        <div class="balance-label">Win Rate</div>
+        <div class="stat-val" id="statsWinRate">0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="balance-label">Total XP</div>
+        <div class="stat-val" id="statsXp">0</div>
+      </div>
+      <div class="stat-card">
         <div class="balance-label">Max Win (ATH)</div>
         <div class="stat-val win-color" id="statsGlobalAth">$0.00</div>
       </div>
@@ -1931,7 +1939,7 @@
     </div>
     <div style="margin-top:20px;">
       <table class="stats-table">
-        <thead><tr><th>Game</th><th>Played</th><th>Wagered</th></tr></thead>
+        <thead><tr><th>Game</th><th>Played</th><th>Wagered</th><th>Win Rate</th></tr></thead>
         <tbody id="statsBody"></tbody>
       </table>
     </div>
@@ -2377,7 +2385,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div class="gcard-title" style="margin-bottom:0;">🔥 Recent Big Wins</div>
         <div style="display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;">
-          <button class="wf-tab active" id="wfTabLucky" onclick="setWfTab('lucky')">⚡ Lucky 5×+</button>
+          <button class="wf-tab active" id="wfTabLucky" onclick="setWfTab('lucky')">⚡ Lucky 3×+</button>
           <button class="wf-tab" id="wfTabHighwager" onclick="setWfTab('highwager')">🐋 Whale 100M+</button>
         </div>
       </div>
@@ -2449,8 +2457,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_mines_lucky" onclick="setMfTab('mines','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_mines_highwager" onclick="setMfTab('mines','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_mines_lucky" onclick="setMfTab('mines','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_mines_highwager" onclick="setMfTab('mines','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_mines"><div class="mf-empty">Loading…</div></div>
@@ -2498,8 +2506,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_tower_lucky" onclick="setMfTab('tower','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_tower_highwager" onclick="setMfTab('tower','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_tower_lucky" onclick="setMfTab('tower','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_tower_highwager" onclick="setMfTab('tower','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_tower"><div class="mf-empty">Loading…</div></div>
@@ -2523,9 +2531,9 @@
         <span class="bet-label">Bet</span>
         <input type="number" class="bet-input" id="rouletteBet" value="10" min="1">
         <div class="bet-quick">
-          <span class="bq" onclick="halfBet('rouletteBet')">½</span>
-          <span class="bq" onclick="doubleBet('rouletteBet')">2×</span>
-          <span class="bq" onclick="maxBet('rouletteBet')">Max</span>
+          <span class="bq" onclick="if(!rSpinning) halfBet('rouletteBet')">½</span>
+          <span class="bq" onclick="if(!rSpinning) doubleBet('rouletteBet')">2×</span>
+          <span class="bq" onclick="if(!rSpinning) maxBet('rouletteBet')">Max</span>
         </div>
       </div>
 
@@ -2552,8 +2560,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_roulette_lucky" onclick="setMfTab('roulette','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_roulette_highwager" onclick="setMfTab('roulette','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_roulette_lucky" onclick="setMfTab('roulette','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_roulette_highwager" onclick="setMfTab('roulette','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_roulette"><div class="mf-empty">Loading…</div></div>
@@ -2597,8 +2605,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_blackjack_lucky" onclick="setMfTab('blackjack','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_blackjack_highwager" onclick="setMfTab('blackjack','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_blackjack_lucky" onclick="setMfTab('blackjack','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_blackjack_highwager" onclick="setMfTab('blackjack','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_blackjack"><div class="mf-empty">Loading…</div></div>
@@ -2662,8 +2670,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_coinflip_lucky" onclick="setMfTab('coinflip','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_coinflip_highwager" onclick="setMfTab('coinflip','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_coinflip_lucky" onclick="setMfTab('coinflip','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_coinflip_highwager" onclick="setMfTab('coinflip','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_coinflip"><div class="mf-empty">Loading…</div></div>
@@ -2697,8 +2705,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_keno_lucky" onclick="setMfTab('keno','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_keno_highwager" onclick="setMfTab('keno','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_keno_lucky" onclick="setMfTab('keno','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_keno_highwager" onclick="setMfTab('keno','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_keno"><div class="mf-empty">Loading…</div></div>
@@ -2752,8 +2760,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_plinko_lucky" onclick="setMfTab('plinko','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_plinko_highwager" onclick="setMfTab('plinko','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_plinko_lucky" onclick="setMfTab('plinko','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_plinko_highwager" onclick="setMfTab('plinko','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_plinko"><div class="mf-empty">Loading…</div></div>
@@ -2800,8 +2808,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_reme_lucky" onclick="setMfTab('reme','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_reme_highwager" onclick="setMfTab('reme','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_reme_lucky" onclick="setMfTab('reme','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_reme_highwager" onclick="setMfTab('reme','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_reme"><div class="mf-empty">Loading…</div></div>
@@ -2849,8 +2857,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_slots_lucky" onclick="setMfTab('slots','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_slots_highwager" onclick="setMfTab('slots','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_slots_lucky" onclick="setMfTab('slots','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_slots_highwager" onclick="setMfTab('slots','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_slots"><div class="mf-empty">Loading…</div></div>
@@ -2892,8 +2900,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_crash_lucky" onclick="setMfTab('crash','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_crash_highwager" onclick="setMfTab('crash','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_crash_lucky" onclick="setMfTab('crash','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_crash_highwager" onclick="setMfTab('crash','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_crash"><div class="mf-empty">Loading…</div></div>
@@ -2936,8 +2944,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_dice_lucky" onclick="setMfTab('dice','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_dice_highwager" onclick="setMfTab('dice','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_dice_lucky" onclick="setMfTab('dice','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_dice_highwager" onclick="setMfTab('dice','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_dice"><div class="mf-empty">Loading…</div></div>
@@ -2979,8 +2987,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_hilo_lucky" onclick="setMfTab('hilo','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_hilo_highwager" onclick="setMfTab('hilo','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_hilo_lucky" onclick="setMfTab('hilo','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_hilo_highwager" onclick="setMfTab('hilo','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_hilo"><div class="mf-empty">Loading…</div></div>
@@ -3020,8 +3028,8 @@
         <div class="mini-feed-header">
           <span class="mini-feed-title">🔥 Recent Big Wins</span>
           <div class="mini-feed-tabs">
-            <button class="mf-tab active" id="mfTab_wheel_lucky" onclick="setMfTab('wheel','lucky')">⚡ 5×+</button>
-            <button class="mf-tab" id="mfTab_wheel_highwager" onclick="setMfTab('wheel','highwager')">🐋 100M+</button>
+            <button class="mf-tab active" id="mfTab_wheel_lucky" onclick="setMfTab('wheel','lucky')">⚡ 3×+</button>
+            <button class="mf-tab" id="mfTab_wheel_highwager" onclick="setMfTab('wheel','highwager')">🐋 1M+</button>
           </div>
         </div>
         <div class="mini-feed" id="miniFeed_wheel"><div class="mf-empty">Loading…</div></div>
@@ -3088,23 +3096,38 @@ function updateStatsUI() {
   document.getElementById('statsWins').textContent = stats.wins;
   document.getElementById('statsWagered').textContent = fmt(stats.totalWagered);
   
+  const wr = stats.gamesPlayed > 0 ? Math.round(stats.wins / stats.gamesPlayed * 100) : 0;
+  const wrEl = document.getElementById('statsWinRate');
+  wrEl.textContent = wr + '%';
+  wrEl.className = 'stat-val ' + (wr >= 50 ? 'win-color' : wr >= 35 ? '' : 'lose-color');
+
+  const xpEl = document.getElementById('statsXp');
+  if (xpEl) xpEl.textContent = fmt(stats.xp || 0).replace('$','');
+
   const profitEl = document.getElementById('statsProfit');
   profitEl.textContent = (stats.netProfit >= 0 ? '+' : '') + fmt(stats.netProfit);
   profitEl.className = 'stat-val ' + (stats.netProfit >= 0 ? 'win-color' : 'lose-color');
-  
-  document.getElementById('statsGlobalAth').textContent = fmt(stats.globalAth);
-  document.getElementById('statsGlobalAtl').textContent = fmt(stats.globalAtl);
+
+  const athEl = document.getElementById('statsGlobalAth');
+  if (athEl) athEl.textContent = fmt(stats.globalAth || 0);
+  const atlEl = document.getElementById('statsGlobalAtl');
+  if (atlEl) atlEl.textContent = fmt(stats.globalAtl || 0);
 
   let html = '';
-  for(let g in stats.games) {
-    let d = stats.games[g];
+  const gameIconMap = { mines:'💣',tower:'🗼',roulette:'🎡',blackjack:'🃏',coinflip:'🪙',keno:'🔢',plinko:'🔽',reme:'🎱',slots:'🎰',crash:'💀',dice:'🎲',hilo:'🃏',wheel:'🎡' };
+  const sorted = Object.entries(stats.games).sort((a,b) => (b[1].played||0) - (a[1].played||0));
+  for (let [g, d] of sorted) {
+    if (!d.played) continue;
     const wr = d.played > 0 ? Math.round((d.wins||0) / d.played * 100) : 0;
+    const wrColor = wr >= 50 ? 'var(--green)' : wr >= 35 ? 'var(--gold)' : 'var(--red)';
     html += `<tr>
-      <td style="text-transform:capitalize;">${g}</td>
+      <td><span style="margin-right:4px">${gameIconMap[g]||'🎰'}</span>${g.charAt(0).toUpperCase()+g.slice(1)}</td>
       <td>${d.played}</td>
       <td>${fmt(d.wagered)}</td>
+      <td style="color:${wrColor};font-weight:700">${wr}%</td>
     </tr>`;
   }
+  if (!html) html = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:12px">No games played yet</td></tr>';
   document.getElementById('statsBody').innerHTML = html;
 }
 
@@ -3119,10 +3142,10 @@ function trackGame(gameType, bet, payout, isWin) {
   if (net > stats.globalAth) stats.globalAth = net;
   if (net < stats.globalAtl) stats.globalAtl = net;
 
-  if(stats.games[gameType]) {
-    stats.games[gameType].played++;
-    stats.games[gameType].wagered += bet;
-  }
+  if (!stats.games[gameType]) stats.games[gameType] = { played: 0, wagered: 0, wins: 0 };
+  stats.games[gameType].played++;
+  stats.games[gameType].wagered += bet;
+  if (isWin) stats.games[gameType].wins = (stats.games[gameType].wins || 0) + 1;
   
   saveState();
   if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI();
@@ -3200,6 +3223,8 @@ function showTab(id){
   document.querySelectorAll('.mbn-btn').forEach(b=>b.classList.remove('active'));
   const mbn=document.getElementById('mbn-'+id);
   if(mbn){ mbn.classList.add('active'); mbn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
+  // Load mini-feed for the new tab
+  if (typeof loadMiniFeed === 'function') loadMiniFeed(id);
 }
 
 // ── TOAST ──
@@ -3260,7 +3285,7 @@ function minesCalcMult(gems,bombs){
 function minesStart(){
   const bet=parseFloat(document.getElementById('minesBet').value)||0;
   const bombs=parseInt(document.getElementById('minesCount').value)||3;
-  if(bet<=0||bet>balance){ toast('Invalid bet!','lose'); return; }
+  if(bet<=0){ toast('Invalid bet!','lose'); return; }
   if(bombs<1||bombs>24){ toast('Mines must be 1–24','lose'); return; }
   if(!deductBet(bet)) return;
   currentMinesBet = bet;
@@ -3391,7 +3416,7 @@ function towerBuildMults(cfg){
 
 function towerStart(){
   const bet=parseFloat(document.getElementById('towerBet').value)||0;
-  if(bet<=0||bet>balance){ toast('Invalid bet!','lose'); return; }
+  if(bet<=0){ toast('Invalid bet!','lose'); return; }
   if(!deductBet(bet)) return;
   currentTowerBet = bet;
   towerActive=true; towerFloor=0;
@@ -3579,9 +3604,9 @@ window.rouletteSpin = function() {
   if (rSpinning) return;
   if (rBetType === null && rBetNumber === null) { toast('Select a bet type first!', 'lose'); return; }
   const bet = parseFloat(document.getElementById('rouletteBet').value) || 0;
-  if (bet <= 0 || bet > balance) { toast('Invalid bet!', 'lose'); return; }
+  if (bet <= 0) { toast('Invalid bet!', 'lose'); return; }
   syncDevInputs();
-  if(!deductBet(bet)) return;
+  if(!deductBet(bet)) { rSpinning = false; return; }
   rSpinning = true;
   document.getElementById('rouletteSpinBtn').disabled = true;
   document.getElementById('rouletteBet').disabled = true;
@@ -3770,7 +3795,7 @@ function bjSetControls(state){
 
 window.bjDeal = function() {
   const bet = parseFloat(document.getElementById('bjBet').value) || 0;
-  if (bet <= 0 || bet > balance) { toast('Invalid bet!', 'lose'); return; }
+  if (bet <= 0) { toast('Invalid bet!', 'lose'); return; }
   syncDevInputs();
   if(!deductBet(bet)) return;
   bjBet = bet;
@@ -3912,7 +3937,10 @@ function cfSelect(c) {
   document.getElementById('cfTails').classList.toggle('selected', c === 'tails');
 }
 
+let cfFlipping = false;
+
 function cfFlip() {
+  if (cfFlipping) return;
   if (!cfActive) {
     let bet = parseFloat(document.getElementById('cfBet').value);
     if (isNaN(bet) || bet <= 0 || bet > balance) return toast('Invalid Bet', 'lose');
@@ -3938,8 +3966,10 @@ function cfFlip() {
   coin.classList.add('cf-spin');
   btn.disabled = true;
   coBtn.disabled = true;
+  cfFlipping = true;
 
   setTimeout(() => {
+    cfFlipping = false;
     coin.classList.remove('cf-spin');
     syncDevInputs();
     const god = DEV.godMode;
@@ -4443,7 +4473,10 @@ function devChangePw() {
   const np = document.getElementById('devNewPw').value.trim();
   if (!np) { document.getElementById('devPwChangeMsg').textContent = '⚠ Enter a new password.'; return; }
   devPassword = np;
-  saveBalanceToSupabase(); // saves all fields including dev_password
+  // Save immediately — bypass debounce so password isn't lost on quick close
+  if (currentUser && !isGuest) {
+    sb.from('users').update({ dev_password: devPassword }).eq('id', currentUser.id);
+  }
   document.getElementById('devNewPw').value = '';
   document.getElementById('devPwChangeMsg').textContent = '✓ Password updated!';
   setTimeout(() => { let msg = document.getElementById('devPwChangeMsg'); if(msg) msg.textContent = ''; }, 2500);
@@ -4873,8 +4906,8 @@ async function loadWinsFeed() {
   if (!feed) return;
   try {
     let query = sb.from('win_feed').select('*').order('created_at', { ascending: false }).limit(15);
-    if (_wfTab === 'lucky') query = query.gte('multiplier', 5);
-    else query = query.gte('bet', 100_000_000).order('bet', { ascending: false });
+    if (_wfTab === 'lucky') query = query.gte('multiplier', 3);
+    else query = query.gte('bet', 1_000_000).order('bet', { ascending: false });
     const { data, error } = await query;
     if (error || !data || !data.length) {
       feed.innerHTML = `<div class="wf-empty">${_wfTab === 'lucky' ? 'No 5×+ wins yet. Hit big! ⚡' : 'No 100M+ bets yet. Go whale! 🐋'}</div>`;
@@ -4915,7 +4948,7 @@ trackGame = function(gameType, bet, payout, isWin) {
   if (devActive || !isWin) return;
   const username = currentUser?._username || null;
   const mult = bet > 0 ? payout / bet : 0;
-  if (mult >= 5 || bet >= 100_000_000) {
+  if (mult >= 3 || bet >= 1_000_000) {
     pushWinToFeed(gameType, username, bet, payout);
   }
 };
@@ -5406,6 +5439,11 @@ function hiloRenderCard(card) {
 }
 
 window.hiloStart = function() {
+  if (hiloActive) {
+    // Treat as a loss — player abandoned
+    trackGame('hilo', hiloCurrentBet, 0, false);
+    hiloReset();
+  }
   const bet = parseFloat(document.getElementById('hiloBet').value);
   if (isNaN(bet) || bet <= 0) return toast('Invalid bet!', 'lose');
   if (!deductBet(bet)) return;
@@ -5753,18 +5791,19 @@ async function doLogout() {
     isGuest = false; currentUser = null; balance = 0; stats = DEFAULT_STATS();
     clearTimeout(_saveTimer);
     document.getElementById('userChip').style.display = 'none';
-    document.getElementById('devBtn').style.display = 'flex';
+    document.getElementById('devBtn').style.display = 'none';
     document.getElementById('authOverlay').classList.remove('hidden');
     document.getElementById('loginError').textContent = '';
     return;
   }
   // Force immediate save (bypass debounce) before signing out
   clearTimeout(_saveTimer);
-  await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
+  await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats), dev_password: devPassword }).eq('id', currentUser.id);
   await sb.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
   document.getElementById('adminBtn').style.display = 'none';
+  document.getElementById('devBtn').style.display = 'none';
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
@@ -5778,7 +5817,6 @@ async function onAuthSuccess(user) {
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('rcLoadingScreen').style.display = 'none';
-  document.getElementById('devBtn').style.display = 'flex';
 
   let isNewUser = false;
   const { data, error } = await sb
@@ -5848,7 +5886,7 @@ async function saveBalanceToSupabase() {
   if (!currentUser || isGuest) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async () => {
-    await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
+    await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats), dev_password: devPassword }).eq('id', currentUser.id);
   }, 1500);
 }
 
@@ -5915,7 +5953,7 @@ async function doSetUsername() {
   msg.textContent = 'Checking…'; msg.className = 'profile-msg';
   const { data: existing } = await sb.from('users').select('id').eq('username', un).single();
   if (existing) { msg.textContent = 'Username already taken.'; msg.className = 'profile-msg err'; return; }
-  await sb.from('users').upsert({ id: currentUser.id, username: un, username_set: true });
+  await sb.from('users').update({ username: un, username_set: true }).eq('id', currentUser.id);
   currentUser._username = un;
   currentUser._usernameSet = true;
   document.getElementById('userChipLabel').textContent = '👤 ' + un;
@@ -5932,7 +5970,6 @@ async function doTip() {
   if (!toUsername || toUsername.length < 3 || toUsername.length > 20) { msg.textContent = 'Enter a valid username (3–20 chars, letters/numbers/underscores).'; msg.className = 'profile-msg err'; return; }
   if (!rawAmount || isNaN(parseFloat(rawAmount)) || amount < 1) { msg.textContent = 'Enter a valid whole number amount (min 1).'; msg.className = 'profile-msg err'; return; }
   if (amount > balance) { msg.textContent = 'Not enough balance.'; msg.className = 'profile-msg err'; return; }
-  if (amount > 1000000) { msg.textContent = 'Max tip is $1,000,000 at a time.'; msg.className = 'profile-msg err'; return; }
   if (toUsername === currentUser._username?.toLowerCase()) { msg.textContent = "You can't tip yourself!"; msg.className = 'profile-msg err'; return; }
   const ok = await showConfirm({ icon:'💸', title:'Send Tip?', msg:`Send ${fmt(amount)} to ${toUsername}?`, yesText:'Send Tip' });
   if (!ok) return;
@@ -6259,21 +6296,21 @@ async function checkDailyBonus() {
   const diffHours = last ? (now - last) / 36e5 : 999;
   if (diffHours < 24) return; // Already claimed today
 
-  const bonus = 100;
+  const level = getLevelFromXp(stats.xp || 0);
+  const bonus = Math.max(100, Math.floor(100 * Math.pow(level, 1.3)));
   const freshBalance = parseFloat(data.balance) || balance;
   balance = freshBalance + bonus;
   document.getElementById('balanceDisplay').textContent = fmt(balance);
   clearTimeout(_saveTimer);
-  await sb.from('users').upsert({
-    id: currentUser.id, email: currentUser.email,
-    balance: balance, stats: JSON.stringify(stats),
-    dev_password: devPassword, last_bonus_at: now.toISOString()
-  });
+  await sb.from('users').update({
+    balance: balance,
+    last_bonus_at: now.toISOString()
+  }).eq('id', currentUser.id);
 
   // Show bonus toast
   const el = document.createElement('div');
   el.className = 'bonus-toast';
-  el.innerHTML = `🎁 Daily Bonus! +${fmt(bonus)} added to your balance`;
+  el.innerHTML = `🎁 Daily Bonus! +${fmt(bonus)} (Level ${level} reward)`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 4000);
 }
@@ -6295,6 +6332,8 @@ function isAdmin() { return currentUser && (ADMIN_IDS.includes(currentUser.id) |
 function openAdmin() {
   if (!isAdmin()) return;
   document.getElementById('adminOverlay').classList.add('open');
+  const badge = document.getElementById('adminBadge');
+  if (badge) badge.textContent = isOwner() ? 'Owner' : 'Admin';
   // Clear all fields
   ['adminLookupUser','adminBalUser','adminBalAmount','adminResetUser','adminBanUser','adminDevUser','adminDevHours','ownerAddAdminUser'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
@@ -6396,6 +6435,7 @@ async function adminLookup() {
   document.getElementById('adminCardDetail').innerHTML =
     `Balance: <b>${fmt(u.balance)}</b> · Level <b>${level}</b> · Games: <b>${st.gamesPlayed||0}</b> · Wins: <b>${st.wins||0}</b><br>` +
     `Betting: <b style="color:${u.betting_disabled?'var(--red)':'var(--green)'}">${u.betting_disabled?'DISABLED':'Enabled'}</b> · ` +
+    `Admin: <b style="color:${u.is_admin?'var(--gold)':'var(--muted)'}">${u.is_admin?'Yes':'No'}</b> · ` +
     `Temp Dev: <b>${u.temp_dev_until && new Date(u.temp_dev_until)>new Date() ? 'Active until '+new Date(u.temp_dev_until).toLocaleString() : 'None'}</b>`;
   _adminMsg('adminLookupMsg', '', true);
 }
@@ -6507,12 +6547,12 @@ async function loadMiniFeed(panel) {
     }
     let filtered;
     if (tab === 'lucky') {
-      filtered = data.filter(w => w.bet > 0 && (w.multiplier ?? (w.payout / w.bet)) >= 5).slice(0, 5);
+      filtered = data.filter(w => w.bet > 0 && (w.multiplier ?? (w.payout / w.bet)) >= 3).slice(0, 5);
     } else {
-      filtered = data.filter(w => w.bet >= 100_000_000).sort((a, b) => b.bet - a.bet).slice(0, 5);
+      filtered = data.filter(w => w.bet >= 1_000_000).sort((a, b) => b.bet - a.bet).slice(0, 5);
     }
     if (!filtered.length) {
-      el.innerHTML = `<div class="mf-empty">${tab === 'lucky' ? 'No 5×+ wins yet ⚡' : 'No 100M+ bets yet 🐋'}</div>`;
+      el.innerHTML = `<div class="mf-empty">${tab === 'lucky' ? 'No 3×+ wins yet ⚡' : 'No 1M+ bets yet 🐋'}</div>`;
       return;
     }
     el.innerHTML = filtered.map(w => {
@@ -6535,12 +6575,6 @@ async function loadMiniFeed(panel) {
   }
 }
 
-// Extend showTab: load mini feed when switching to a game panel
-const _origShowTab = showTab;
-showTab = function(name) {
-  _origShowTab(name);
-  if (PANELS.includes(name)) loadMiniFeed(name);
-};
 
 // After wins feed refreshes, also refresh the currently visible game mini feed
 const _origLoadWinsFeed = loadWinsFeed;
