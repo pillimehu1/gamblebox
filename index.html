@@ -1847,6 +1847,9 @@ function trackGame(gameType, bet, payout, isWin) {
   
   saveState();
   if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI();
+
+  // Award XP for every game played (based on wager)
+  if (typeof addXp === 'function') addXp(bet, isWin ? (payout / bet) : 0);
 }
 
 function openStats() { document.getElementById('statsOverlay').classList.add('open'); updateStatsUI(); }
@@ -3158,14 +3161,8 @@ async function saveBalanceToSupabase() {
 const _origUpdateBalance = updateBalance;
 updateBalance = function() {
   _origUpdateBalance();
-  if (window._lastXpGain) {
-    const { wager, multiplier } = window._lastXpGain;
-    window._lastXpGain = null;
-    addXp(wager, multiplier);
-  } else {
-    updateLevelUI();
-  }
-  saveBalanceToSupabase();
+  if (typeof updateLevelUI === 'function') updateLevelUI();
+  if (typeof saveBalanceToSupabase === 'function') saveBalanceToSupabase();
 };
 
 // ── PROFILE PANEL ──
