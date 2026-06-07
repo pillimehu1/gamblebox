@@ -571,6 +571,11 @@
   .cf-btn { flex:1; padding:15px; border-radius:10px; border:2px solid var(--border); background:var(--card2); cursor:pointer; text-align:center; font-weight:700; transition:all .2s; }
   .cf-btn.selected { border-color:var(--gold); background:rgba(240,192,64,.1); }
   .cf-btn.locked { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+  .cf-mode-btn { flex:1; padding:10px; border-radius:10px; border:2px solid var(--border); background:var(--card2); cursor:pointer; text-align:center; font-weight:700; font-size:.9rem; transition:all .2s; color:var(--muted); font-family:'Rajdhani',sans-serif; }
+  .cf-mode-btn.active { border-color:var(--gold); background:rgba(240,192,64,.1); color:var(--gold); }
+  .cf-ladder-row { display:flex; align-items:center; justify-content:space-between; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card2); font-size:.85rem; transition:all .2s; }
+  .cf-ladder-row.cf-ladder-current { border-color:var(--gold); background:rgba(240,192,64,.1); color:var(--gold); }
+  .cf-ladder-row.cf-ladder-done { border-color:var(--green); background:rgba(0,230,118,.08); color:var(--green); opacity:.7; }
 
   /* ── KENO ── */
   .keno-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin-bottom:20px; }
@@ -1677,7 +1682,18 @@
   <!-- ════════════════════ COINFLIP ════════════════════ -->
   <div class="game-panel" id="panel-coinflip">
     <div class="gcard">
-      <div class="gcard-title">🪙 Coinflip (Streak Mode)</div>
+      <div class="gcard-title">🪙 Coinflip</div>
+
+      <!-- Mode selector -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;">
+        <div class="cf-mode-btn active" id="cfModeNormal" onclick="cfSetMode('normal')">🎯 Normal</div>
+        <div class="cf-mode-btn" id="cfModeStreak" onclick="cfSetMode('streak')">🔥 Streak</div>
+      </div>
+
+      <!-- Mode descriptions -->
+      <div id="cfDescNormal" style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Win and choose to cash out or keep going. Each round you pick heads or tails. Higher streaks = better multiplier.</div>
+      <div id="cfDescStreak" style="display:none;font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Riskier! Your side locks in for the whole streak. Multipliers climb faster but you can't change your pick.</div>
+
       <div class="bet-row">
         <span class="bet-label">Bet</span>
         <input type="number" class="bet-input" id="cfBet" value="10" min="1">
@@ -1687,15 +1703,33 @@
           <span class="bq" onclick="if(!cfActive) maxBet('cfBet')">Max</span>
         </div>
       </div>
-      <div style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Select your side. It locks in for your entire streak!</div>
-      <div style="display:flex; gap:10px; margin-bottom:20px;">
+
+      <!-- Side selector -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;">
         <div class="cf-btn selected" id="cfHeads" onclick="cfSelect('heads')">Heads</div>
         <div class="cf-btn" id="cfTails" onclick="cfSelect('tails')">Tails</div>
       </div>
+
+      <!-- Coin -->
       <div class="cf-coin" id="cfCoin">H</div>
-      <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn-primary" style="flex:2;" id="cfBtn" onclick="cfFlip()">Flip Coin (1.95×)</button>
-        <button class="btn-secondary" style="flex:1; display:none; border-color:var(--green); color:var(--green);" id="cfCashoutBtn" onclick="cfCashout()">Cash Out</button>
+
+      <!-- Streak info -->
+      <div id="cfStreakInfo" style="display:none;text-align:center;margin-top:12px;">
+        <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Current Multiplier</div>
+        <div id="cfCurMult" style="font-size:2rem;font-weight:700;color:var(--gold);font-family:'Cinzel Decorative',cursive;">1.00×</div>
+        <div style="font-size:.75rem;color:var(--muted);">Streak: <span id="cfStreakCount">0</span> 🔥</div>
+      </div>
+
+      <!-- Multiplier ladder (normal mode) -->
+      <div id="cfLadder" style="display:none;margin-top:16px;margin-bottom:4px;">
+        <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Multiplier Ladder</div>
+        <div id="cfLadderRows" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn-primary" style="flex:2;" id="cfBtn" onclick="cfFlip()">Flip Coin</button>
+        <button class="btn-secondary" style="flex:1;display:none;border-color:var(--green);color:var(--green);" id="cfCashoutBtn" onclick="cfCashout()">Cash Out</button>
       </div>
     </div>
   </div>
@@ -2021,7 +2055,7 @@ window.minesClick = function(i) {
     const mult = baseMult * (DEV.minesMult || 1);
     const bet = parseFloat(document.getElementById('minesBet').value) || 0;
     document.getElementById('minesMult').textContent = mult.toFixed(2) + '×';
-    document.getElementById('minesProfit').textContent = fmt(bet * mult - bet);
+    document.getElementById('minesProfit').textContent = fmt(currentMinesBet * mult - currentMinesBet);
     document.getElementById('minesGems').textContent = minesGemsFound;
     renderMinesGrid(false);
   }
@@ -2031,10 +2065,9 @@ window.minesCashout = function() {
   if (!minesActive) return;
   syncDevInputs();
   const bombs = parseInt(document.getElementById('minesCount').value) || 3;
-  const bet = parseFloat(document.getElementById('minesBet').value) || 0;
   const baseMult = minesCalcMult(Math.max(minesGemsFound, 1), bombs);
   const mult = baseMult * (DEV.minesMult || 1);
-  const win = bet * mult;
+  const win = currentMinesBet * mult;
   balance += win; updateBalance();
   minesActive = false;
   renderMinesGrid(true);
@@ -2194,10 +2227,9 @@ function renderTowerReveal(bombFloor){
 window.towerCashout = function(auto = false) {
   if (!towerActive && !auto) return;
   syncDevInputs();
-  const bet = parseFloat(document.getElementById('towerBet').value) || 0;
   const baseMult = towerMults[towerFloor - 1] || 1;
   const mult = baseMult * (DEV.towerMult || 1);
-  const win = bet * mult;
+  const win = currentTowerBet * mult;
   balance += win; updateBalance();
   towerActive = false;
   renderTower();
@@ -2489,8 +2521,8 @@ function bjHit(){
 function bjStand(){ bjReveal(); }
 
 function bjDouble(){
-  if(balance<bjBet){ toast('Not enough balance to double!','lose'); return; }
-  balance-=bjBet; bjBet*=2; updateBalance();
+  if(!deductBet(bjBet)){ toast('Not enough balance to double!','lose'); return; }
+  bjBet*=2;
   bjDoubled=true;
   bjPlayer.push(bjDeck.pop());
   bjReveal();
@@ -2524,71 +2556,137 @@ window.bjReveal = function() {
 bjSetControls('deal');
 
 // ════════════════════════════════════════════════════════════
-//  COINFLIP (Streak Mode)
+//  COINFLIP — Normal & Streak modes
 // ════════════════════════════════════════════════════════════
 let cfActive = false;
 let cfStreak = 0;
 let cfCurrentBet = 0;
 let cfChoice = 'heads';
+let cfMode = 'normal'; // 'normal' | 'streak'
+
+// Normal mode multiplier ladder (pick side each round, can cash anytime)
+const CF_NORMAL_MULTS = [1.95, 3.5, 6.5, 12, 22, 40, 75, 140, 260, 500];
+
+// Streak mode multipliers (side locked, riskier, faster climb)
+const CF_STREAK_MULTS = [1.95, 4.2, 9.5, 22, 52, 125, 300, 750, 1900, 5000];
+
+function cfSetMode(mode) {
+  if (cfActive) return;
+  cfMode = mode;
+  document.getElementById('cfModeNormal').classList.toggle('active', mode === 'normal');
+  document.getElementById('cfModeStreak').classList.toggle('active', mode === 'streak');
+  document.getElementById('cfDescNormal').style.display = mode === 'normal' ? 'block' : 'none';
+  document.getElementById('cfDescStreak').style.display = mode === 'streak' ? 'block' : 'none';
+  cfUpdateBtn();
+}
+
+function cfUpdateBtn() {
+  const mults = cfMode === 'streak' ? CF_STREAK_MULTS : CF_NORMAL_MULTS;
+  const next = mults[cfStreak] || mults[mults.length - 1];
+  document.getElementById('cfBtn').textContent = cfActive
+    ? `Flip Again (${next.toFixed(2)}×)`
+    : `Flip Coin (${mults[0].toFixed(2)}×)`;
+}
+
+function cfRenderLadder() {
+  const mults = cfMode === 'normal' ? CF_NORMAL_MULTS : CF_STREAK_MULTS;
+  const ladder = document.getElementById('cfLadder');
+  const rows = document.getElementById('cfLadderRows');
+  if (cfMode === 'streak') { ladder.style.display = 'none'; return; }
+  ladder.style.display = 'block';
+  rows.innerHTML = '';
+  // Show up to 5 upcoming + current
+  const start = Math.max(0, cfStreak - 1);
+  const end = Math.min(mults.length, start + 6);
+  for (let i = end - 1; i >= start; i--) {
+    const row = document.createElement('div');
+    row.className = 'cf-ladder-row' + (i === cfStreak ? ' cf-ladder-current' : i < cfStreak ? ' cf-ladder-done' : '');
+    row.innerHTML = `<span>${i < cfStreak ? '✅' : i === cfStreak ? '▶' : `${i + 1}×`}</span><span style="font-weight:700">${mults[i].toFixed(2)}×</span><span style="font-size:.7rem;color:var(--muted)">Win #${i + 1}</span>`;
+    rows.appendChild(row);
+  }
+}
 
 function cfSelect(c) {
-  if (cfActive) return; // Locked during streak
+  // In streak mode, locked once active
+  if (cfActive && cfMode === 'streak') return;
   cfChoice = c;
-  document.getElementById('cfHeads').classList.remove('selected');
-  document.getElementById('cfTails').classList.remove('selected');
-  document.getElementById(c==='heads'?'cfHeads':'cfTails').classList.add('selected');
+  document.getElementById('cfHeads').classList.toggle('selected', c === 'heads');
+  document.getElementById('cfTails').classList.toggle('selected', c === 'tails');
 }
 
 function cfFlip() {
   if (!cfActive) {
     let bet = parseFloat(document.getElementById('cfBet').value);
-    if(isNaN(bet) || bet <= 0 || bet > balance) return toast('Invalid Bet', 'lose');
-    if(!deductBet(bet)) return;
+    if (isNaN(bet) || bet <= 0 || bet > balance) return toast('Invalid Bet', 'lose');
+    if (!deductBet(bet)) return;
     cfCurrentBet = bet;
     cfStreak = 0;
     cfActive = true;
     document.getElementById('cfBet').disabled = true;
-    document.getElementById('cfCashoutBtn').style.display = 'none';
-    document.getElementById('cfHeads').classList.add('locked');
-    document.getElementById('cfTails').classList.add('locked');
+    document.getElementById('cfStreakInfo').style.display = 'block';
+    document.getElementById('cfCurMult').textContent = '—';
+    document.getElementById('cfStreakCount').textContent = '0';
+    if (cfMode === 'streak') {
+      document.getElementById('cfHeads').classList.add('locked');
+      document.getElementById('cfTails').classList.add('locked');
+    }
+    cfRenderLadder();
   }
 
-  let coin = document.getElementById('cfCoin');
-  let btn = document.getElementById('cfBtn');
-  let coBtn = document.getElementById('cfCashoutBtn');
-  
-  coin.classList.add('cf-spin'); 
+  const coin = document.getElementById('cfCoin');
+  const btn = document.getElementById('cfBtn');
+  const coBtn = document.getElementById('cfCashoutBtn');
+
+  coin.classList.add('cf-spin');
   btn.disabled = true;
   coBtn.disabled = true;
 
   setTimeout(() => {
     coin.classList.remove('cf-spin');
     syncDevInputs();
-    let god = DEV.godMode;
-    let force = DEV.cfForce;
-    
+    const god = DEV.godMode;
+    const force = DEV.cfForce;
+
     let isHeads = Math.random() > 0.5;
-    if(god || force==='win') isHeads = (cfChoice === 'heads');
-    if(force==='lose' && !god) isHeads = (cfChoice === 'tails');
-    
-    let result = isHeads ? 'heads' : 'tails';
+    if (god || force === 'win') isHeads = (cfChoice === 'heads');
+    if (force === 'lose' && !god) isHeads = (cfChoice !== 'heads');
+
     coin.textContent = isHeads ? 'H' : 'T';
-    
-    let won = (result === cfChoice);
+    const result = isHeads ? 'heads' : 'tails';
+    const won = result === cfChoice;
+
+    const mults = cfMode === 'streak' ? CF_STREAK_MULTS : CF_NORMAL_MULTS;
+
     if (won) {
       cfStreak++;
-      let nextMult = Math.pow(1.95, cfStreak + 1);
-      let curMult = Math.pow(1.95, cfStreak);
-      toast(`Won! Streak: ${cfStreak} 🔥`, 'win');
-      
-      btn.textContent = `Flip Again (${nextMult.toFixed(2)}×)`;
-      btn.disabled = false;
-      
+      const curMult = mults[cfStreak - 1] || mults[mults.length - 1];
+      const nextMult = mults[cfStreak] || mults[mults.length - 1];
+      const isMax = cfStreak >= mults.length;
+
+      document.getElementById('cfCurMult').textContent = curMult.toFixed(2) + '×';
+      document.getElementById('cfStreakCount').textContent = cfStreak;
+
+      toast(`Won! ${cfStreak > 1 ? 'Streak: ' + cfStreak + ' 🔥' : ''}`, 'win');
+
       coBtn.style.display = 'block';
       coBtn.disabled = false;
       coBtn.textContent = `Cash Out ${fmt(cfCurrentBet * curMult)}`;
+
+      if (isMax) {
+        // Auto cashout at max
+        cfCashout();
+      } else {
+        btn.textContent = `Flip Again (${nextMult.toFixed(2)}×)`;
+        btn.disabled = false;
+        // In normal mode, allow re-picking side
+        if (cfMode === 'normal') {
+          document.getElementById('cfHeads').classList.remove('locked');
+          document.getElementById('cfTails').classList.remove('locked');
+        }
+        cfRenderLadder();
+      }
     } else {
-      toast(`Lost on streak ${cfStreak}.`, 'lose');
+      toast(`Lost${cfStreak > 0 ? ' on streak ' + cfStreak : ''}. 💀`, 'lose');
       trackGame('coinflip', cfCurrentBet, 0, false);
       cfReset();
     }
@@ -2596,11 +2694,13 @@ function cfFlip() {
 }
 
 function cfCashout() {
-  if(!cfActive || cfStreak === 0) return;
-  let payout = cfCurrentBet * Math.pow(1.95, cfStreak);
+  if (!cfActive || cfStreak === 0) return;
+  const mults = cfMode === 'streak' ? CF_STREAK_MULTS : CF_NORMAL_MULTS;
+  const mult = mults[cfStreak - 1] || mults[mults.length - 1];
+  const payout = cfCurrentBet * mult;
   balance += payout; updateBalance();
   trackGame('coinflip', cfCurrentBet, payout, true);
-  toast(`Cashed out ${fmt(payout)}!`, 'win');
+  toast(`Cashed out ${fmt(payout)}! (${mult.toFixed(2)}×)`, 'win');
   cfReset();
 }
 
@@ -2609,12 +2709,15 @@ function cfReset() {
   cfStreak = 0;
   cfCurrentBet = 0;
   document.getElementById('cfBet').disabled = false;
-  document.getElementById('cfBtn').textContent = 'Flip Coin (1.95×)';
-  document.getElementById('cfBtn').disabled = false;
   document.getElementById('cfCashoutBtn').style.display = 'none';
+  document.getElementById('cfStreakInfo').style.display = 'none';
+  document.getElementById('cfLadder').style.display = 'none';
   document.getElementById('cfHeads').classList.remove('locked');
   document.getElementById('cfTails').classList.remove('locked');
+  cfUpdateBtn();
 }
+
+cfUpdateBtn();
 
 
 // ════════════════════════════════════════════════════════════
@@ -2764,10 +2867,8 @@ function initPlinkoBoard() {
     cont.appendChild(b);
   });
 }
-document.addEventListener('DOMContentLoaded', () => {
-  let pr = document.getElementById('plinkoRows');
-  if(pr) { pr.addEventListener('change', initPlinkoBoard); initPlinkoBoard(); }
-});
+document.getElementById('plinkoRows').addEventListener('change', initPlinkoBoard);
+initPlinkoBoard();
 
 function plinkoDrop() {
   let btn = document.getElementById('plinkoBtn');
