@@ -97,15 +97,6 @@
   .hdr-btn-dev { border-color:rgba(213,0,249,.35); color:rgba(213,0,249,.6); }
   .hdr-btn-dev:hover { border-color:var(--purple); color:var(--purple); }
   .hdr-btn-add:hover { opacity:.88; transform:scale(1.03); }
-  .user-chip {
-    display:flex; align-items:center; gap:5px;
-    background:var(--card); border:1px solid var(--border);
-    border-radius:9px; padding:0 10px; height:36px;
-    font-size:.8rem; cursor:pointer; flex-shrink:0;
-    transition:border-color .2s; white-space:nowrap;
-  }
-  .user-chip:hover { border-color:var(--gold); }
-  .user-chip-name { color:var(--gold); font-weight:700; max-width:90px; overflow:hidden; text-overflow:ellipsis; }
 
   /* ── DEV PANEL OVERLAY ── */
   .dev-overlay {
@@ -184,6 +175,7 @@
   .dev-toggle input:checked+.dev-slider:before { transform:translateX(20px); }
   .dev-hint { font-size:.7rem; color:rgba(136,136,136,.7); margin-top:2px; }
   .dev-separator { height:1px; background:rgba(255,255,255,.06); margin:14px 0; }
+  .pf-separator  { height:1px; background:rgba(255,255,255,.06); margin:14px 0; }
   .dev-pw-section { margin-bottom:20px; }
   .dev-pw-row { display:flex; gap:8px; align-items:center; }
   .dev-pw-input {
@@ -2578,9 +2570,9 @@
         <span class="bet-label">Bet</span>
         <input type="number" class="bet-input" id="bjBet" value="10" min="1">
         <div class="bet-quick">
-          <span class="bq" onclick="halfBet('bjBet')">½</span>
-          <span class="bq" onclick="doubleBet('bjBet')">2×</span>
-          <span class="bq" onclick="maxBet('bjBet')">Max</span>
+          <span class="bq" onclick="if(!bjInGame) halfBet('bjBet')">½</span>
+          <span class="bq" onclick="if(!bjInGame) doubleBet('bjBet')">2×</span>
+          <span class="bq" onclick="if(!bjInGame) maxBet('bjBet')">Max</span>
         </div>
       </div>
 
@@ -3049,8 +3041,8 @@ const DEFAULT_STATS = () => ({
   wins: 0,
   netProfit: 0,
   totalWagered: 0,
-  globalAth: 0,
-  globalAtl: 0,
+  globalAth: null,
+  globalAtl: null,
   xp: 0,
   level: 1,
   games: {
@@ -3109,9 +3101,9 @@ function updateStatsUI() {
   profitEl.className = 'stat-val ' + (stats.netProfit >= 0 ? 'win-color' : 'lose-color');
 
   const athEl = document.getElementById('statsGlobalAth');
-  if (athEl) athEl.textContent = fmt(stats.globalAth || 0);
+  if (athEl) athEl.textContent = stats.globalAth !== null ? fmt(stats.globalAth) : '—';
   const atlEl = document.getElementById('statsGlobalAtl');
-  if (atlEl) atlEl.textContent = fmt(stats.globalAtl || 0);
+  if (atlEl) atlEl.textContent = stats.globalAtl !== null ? fmt(stats.globalAtl) : '—';
 
   let html = '';
   const gameIconMap = { mines:'💣',tower:'🗼',roulette:'🎡',blackjack:'🃏',coinflip:'🪙',keno:'🔢',plinko:'🔽',reme:'🎱',slots:'🎰',crash:'💀',dice:'🎲',hilo:'🃏',wheel:'🎡' };
@@ -3139,8 +3131,8 @@ function trackGame(gameType, bet, payout, isWin) {
   const net = payout - bet;
   stats.netProfit += net;
   
-  if (net > stats.globalAth) stats.globalAth = net;
-  if (net < stats.globalAtl) stats.globalAtl = net;
+  if (stats.globalAth === null || net > stats.globalAth) stats.globalAth = net;
+  if (stats.globalAtl === null || net < stats.globalAtl) stats.globalAtl = net;
 
   if (!stats.games[gameType]) stats.games[gameType] = { played: 0, wagered: 0, wins: 0 };
   stats.games[gameType].played++;
@@ -3171,7 +3163,7 @@ async function resetStats() {
   const ok = await showConfirm({ icon:'📊', title:'Reset All Stats?', msg:'This will wipe your game history, wins, wagered totals and XP progress. This cannot be undone.', yesText:'Reset', yesDanger:true });
   if (!ok) return;
   stats = { 
-    gamesPlayed: 0, wins: 0, netProfit: 0, totalWagered: 0, globalAth: 0, globalAtl: 0,
+    gamesPlayed: 0, wins: 0, netProfit: 0, totalWagered: 0, globalAth: null, globalAtl: null,
     xp: 0, level: 1,
     games: {
       mines: { played: 0, wagered: 0 },
@@ -3358,7 +3350,6 @@ window.minesClick = function(i) {
     const bombs = parseInt(document.getElementById('minesCount').value) || 3;
     const baseMult = minesCalcMult(minesGemsFound, bombs);
     const mult = baseMult * (DEV.minesMult || 1);
-    const bet = parseFloat(document.getElementById('minesBet').value) || 0;
     document.getElementById('minesMult').textContent = mult.toFixed(2) + '×';
     document.getElementById('minesProfit').textContent = fmt(currentMinesBet * mult - currentMinesBet);
     document.getElementById('minesGems').textContent = minesGemsFound;
@@ -3727,7 +3718,7 @@ window.rouletteSpin = function() {
 // ════════════════════════════════════════════════════════════
 const SUITS=['♠','♥','♦','♣'];
 const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-let bjDeck=[], bjPlayer=[], bjDealer=[], bjBet=0, bjInGame=false, bjDoubled=false;
+let bjDeck=[], bjPlayer=[], bjDealer=[], bjBet=0, bjOriginalBet=0, bjInGame=false, bjDoubled=false;
 
 function bjBuildDeck(){
   let d=[];
@@ -3799,6 +3790,7 @@ window.bjDeal = function() {
   syncDevInputs();
   if(!deductBet(bet)) return;
   bjBet = bet;
+  bjOriginalBet = bet; // track pre-double amount for stats
   document.getElementById('bjBet').disabled = true;
   bjDeck = bjBuildDeck(); bjPlayer = []; bjDealer = []; bjInGame = true; bjDoubled = false;
   document.getElementById('bjResult').innerHTML = '';
@@ -3871,9 +3863,9 @@ window.bjReveal = function() {
   document.getElementById('bjBet').disabled = false;
   bjSetControls('deal');
   
-  if (type==='win') { toast('🏆 Won '+fmt(payout)+'!','win'); trackGame('blackjack', bjBet, payout, true); }
-  else if (type==='lose') { toast('❌ Lost '+fmt(bjBet),'lose'); trackGame('blackjack', bjBet, 0, false); }
-  else { toast('🤝 Push — bet returned',''); stats.gamesPlayed++; stats.totalWagered += bjBet; if(stats.games.blackjack){ stats.games.blackjack.played++; stats.games.blackjack.wagered += bjBet; } if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI(); saveBalanceToSupabase(); }
+  if (type==='win') { toast('🏆 Won '+fmt(payout)+'!','win'); trackGame('blackjack', bjOriginalBet, payout, true); }
+  else if (type==='lose') { toast('❌ Lost '+fmt(bjOriginalBet),'lose'); trackGame('blackjack', bjOriginalBet, 0, false); }
+  else { toast('🤝 Push — bet returned',''); stats.gamesPlayed++; stats.totalWagered += bjOriginalBet; if(stats.games.blackjack){ stats.games.blackjack.played++; stats.games.blackjack.wagered += bjOriginalBet; } if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI(); saveBalanceToSupabase(); }
 };
 
 bjSetControls('deal');
@@ -5833,6 +5825,9 @@ async function onAuthSuccess(user) {
         const loaded = typeof data.stats === 'string' ? JSON.parse(data.stats) : data.stats;
         const def = DEFAULT_STATS();
         stats = { ...def, ...loaded, games: { ...def.games, ...(loaded.games || {}) } };
+        // Normalise legacy globalAth/Atl: if they are exactly 0 and no games played, treat as unset
+        if (stats.globalAth === 0 && stats.gamesPlayed === 0) stats.globalAth = null;
+        if (stats.globalAtl === 0 && stats.gamesPlayed === 0) stats.globalAtl = null;
       } catch(e) { stats = DEFAULT_STATS(); }
     } else {
       stats = DEFAULT_STATS();
@@ -5847,21 +5842,31 @@ async function onAuthSuccess(user) {
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   } else {
-    // Brand new user
+    // Brand new user — but first check if a row already exists (e.g. after email confirmation)
+    // to avoid overwriting an existing username with null.
     isNewUser = true;
     balance = 1000;
     stats = DEFAULT_STATS();
     devPassword = 'admin';
     const pendingUsername = window._pendingUsername || null;
     window._pendingUsername = null;
-    currentUser._username = pendingUsername;
-    currentUser._usernameSet = !!pendingUsername;
+
+    // Check if the row exists already (email-confirmed users hit this path a second time)
+    const { data: existingRow } = await sb.from('users').select('username, username_set, balance').eq('id', user.id).single();
+    const finalUsername = existingRow?.username || pendingUsername || null;
+    // If an existing row is found, restore their balance instead of resetting to 1000
+    if (existingRow?.balance !== undefined && existingRow.balance !== null) {
+      balance = parseFloat(existingRow.balance);
+    }
+
+    currentUser._username = finalUsername;
+    currentUser._usernameSet = !!(existingRow?.username_set || (finalUsername && !existingRow));
     await sb.from('users').upsert({
       id: user.id, email: user.email, balance: balance,
-      stats: stats, dev_password: devPassword,
-      username: pendingUsername, username_set: !!pendingUsername
+      stats: JSON.stringify(stats), dev_password: devPassword,
+      username: finalUsername, username_set: !!finalUsername
     });
-    const chipLabel = pendingUsername || user.email.split('@')[0];
+    const chipLabel = finalUsername || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   }
   updateBalance(); updateStatsUI(); updateLevelUI();
@@ -6854,10 +6859,7 @@ showTab = function(name) {
   if (name === 'lobby' && currentUser && !isGuest) chatInit();
 };
 
-// Also init on page load if lobby is active
-document.addEventListener('DOMContentLoaded', () => {
-  if (currentUser && !isGuest) chatInit();
-});
+// Chat is initialised inside onAuthSuccess once the session is confirmed.
 
 </script>
 </body>
