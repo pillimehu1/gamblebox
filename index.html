@@ -581,7 +581,8 @@
   .keno-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; margin-bottom:20px; }
   .keno-cell { padding:10px 0; text-align:center; background:var(--card2); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-weight:700; transition:all 0.2s; }
   .keno-cell.selected { background:#a352ff; color:#fff; border-color:#d500f9; }
-  .keno-cell.hit { background:var(--green); color:#000; animation:pop .3s; }
+  .keno-cell.hit { background:var(--green); color:#000; animation:pop .3s; border-color:var(--green); }
+  .keno-cell.selected.hit { background:var(--green); color:#000; border-color:var(--green); }
   .keno-cell.miss { opacity:0.4; }
   @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
   
@@ -1245,6 +1246,19 @@
 
 <!-- ── TOAST ── -->
 <div id="toast"></div>
+
+<!-- ── CONFIRM DIALOG (body-level, always accessible) ── -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="confirmResolve(false)">Cancel</button>
+      <button class="confirm-yes" id="confirmYesBtn" onclick="confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── LEADERBOARD OVERLAY ── -->
 <div class="generic-overlay" id="lbOverlay">
@@ -2179,11 +2193,9 @@ function clampBetInput(id) {
   else if (v > balance && !devInfiniteBalance) el.value = Math.floor(balance);
   else el.value = Math.floor(v);
 }
-// Attach clamp to all bet inputs on input event
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.bet-input[type="number"]').forEach(el => {
-    el.addEventListener('blur', () => clampBetInput(el.id));
-  });
+// Attach clamp to all bet inputs on blur
+document.querySelectorAll('.bet-input[type="number"]').forEach(el => {
+  el.addEventListener('blur', () => clampBetInput(el.id));
 });
 
 function deductBet(amount) {
@@ -2299,8 +2311,10 @@ window.minesCashout = async function() {
   const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
+  // Lock grid so tiles can't be clicked while confirm is open
+  minesActive = false;
   const ok = await showConfirm({ icon:'💰', title:'Cash Out?', msg:`Lock in ${fmt(win)} (${mult.toFixed(2)}×)?`, yesText:'Cash Out' });
-  if (!ok) return;
+  if (!ok) { minesActive = true; return; } // Restore if cancelled
   balance += win; updateBalance();
   minesActive = false;
   renderMinesGrid(true);
@@ -2468,8 +2482,9 @@ window.towerCashout = async function(auto = false) {
   const mult = baseMult * (DEV.towerMult || 1);
   const win = currentTowerBet * mult;
   if (!auto) {
+    towerActive = false; // lock tiles during confirm
     const ok = await showConfirm({ icon:'🏆', title:'Cash Out?', msg:`Lock in ${fmt(win)} (${mult.toFixed(2)}×)?`, yesText:'Cash Out' });
-    if (!ok) return;
+    if (!ok) { towerActive = true; return; } // restore if cancelled
   }
   balance += win; updateBalance();
   towerActive = false;
@@ -2945,8 +2960,9 @@ async function cfCashout() {
   const mults = cfMode === 'streak' ? CF_STREAK_MULTS : CF_NORMAL_MULTS;
   const mult = mults[cfStreak - 1] || mults[mults.length - 1];
   const payout = cfCurrentBet * mult;
+  cfActive = false; // lock during confirm
   const ok = await showConfirm({ icon:'🪙', title:'Cash Out?', msg:`Lock in ${fmt(payout)} (${mult.toFixed(2)}× · ${cfStreak} streak)?`, yesText:'Cash Out' });
-  if (!ok) return;
+  if (!ok) { cfActive = true; return; } // restore if cancelled
   balance += payout; updateBalance();
   trackGame('coinflip', cfCurrentBet, payout, true);
   toast(`Cashed out ${fmt(payout)}! (${mult.toFixed(2)}×)`, 'win');
@@ -4063,18 +4079,5 @@ async function checkDailyBonus() {
   });
 })();
 </script>
-<!-- ── CONFIRM DIALOG (body-level so it works on all tabs) ── -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon" id="confirmIcon">⚠️</div>
-    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
-    <div class="confirm-msg" id="confirmMsg"></div>
-    <div class="confirm-btns">
-      <button class="confirm-no" onclick="confirmResolve(false)">Cancel</button>
-      <button class="confirm-yes" id="confirmYesBtn" onclick="confirmResolve(true)">Confirm</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
