@@ -5804,11 +5804,19 @@ async function doLogout() {
 }
 
 // ── ON SUCCESSFUL AUTH ──
+let _authInProgress = false; // prevent double-fire from onAuthStateChange
 async function onAuthSuccess(user) {
+  if (_authInProgress) return; // already loading, ignore duplicate event
+  _authInProgress = true;
+
   currentUser = user;
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('rcLoadingScreen').style.display = 'none';
+
+  // Pause auto-save while we load — prevents writing stale balance=0 before DB read completes
+  const _pauseSave = saveBalanceToSupabase;
+  saveBalanceToSupabase = async () => {}; // no-op during load
 
   let isNewUser = false;
   const { data, error } = await sb
@@ -5825,6 +5833,7 @@ async function onAuthSuccess(user) {
   }
 
   if (data && !error) {
+    // ── Existing user — restore everything from DB ──
     balance = (data.balance !== null && data.balance !== undefined) ? parseFloat(data.balance) : 0;
     if (data.dev_password) devPassword = data.dev_password;
     if (data.stats) {
@@ -5840,45 +5849,50 @@ async function onAuthSuccess(user) {
       stats = DEFAULT_STATS();
     }
     currentUser._username = data.username || null;
-    currentUser._usernameSet = usernameSet || !!(data.username); // if username exists in DB, treat as set
+    currentUser._usernameSet = usernameSet || !!(data.username);
     currentUser._bettingDisabled = data.betting_disabled || false;
-    // Check temp dev tools
     const tempDevUntil = data.temp_dev_until ? new Date(data.temp_dev_until) : null;
     currentUser._hasTempDev = tempDevUntil && tempDevUntil > new Date();
-    // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   } else {
-    // Brand new user — but first check if a row already exists (e.g. after email confirmation)
-    // to avoid overwriting an existing username with null.
-    isNewUser = true;
-    balance = 1000;
-    stats = DEFAULT_STATS();
-    devPassword = 'admin';
-    const pendingUsername = window._pendingUsername || null;
-    window._pendingUsername = null;
-
-    // Check if the row exists already (email-confirmed users hit this path a second time)
-    const { data: existingRow } = await sb.from('users').select('username, username_set, balance').eq('id', user.id).single();
-    const finalUsername = existingRow?.username || pendingUsername || null;
-    // If an existing row is found, restore their balance instead of resetting to 1000
-    if (existingRow?.balance !== undefined && existingRow.balance !== null) {
-      balance = parseFloat(existingRow.balance);
+    // ── No row found — truly new user ──
+    // SAFETY: before writing anything, double-check the row really doesn't exist.
+    // This prevents overwriting real data if the first query failed due to RLS/network.
+    const { data: safeCheck } = await sb.from('users').select('id, balance, username, username_set').eq('id', user.id).single();
+    if (safeCheck) {
+      // Row exists — first query must have errored (RLS, missing col, etc). Restore from safeCheck.
+      balance = (safeCheck.balance !== null && safeCheck.balance !== undefined) ? parseFloat(safeCheck.balance) : 0;
+      currentUser._username = safeCheck.username || null;
+      currentUser._usernameSet = safeCheck.username_set || !!(safeCheck.username);
+      const chipLabel = safeCheck.username || user.email.split('@')[0];
+      document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
+    } else {
+      // Genuinely new user — create their row
+      isNewUser = true;
+      balance = 1000;
+      stats = DEFAULT_STATS();
+      devPassword = 'admin';
+      const pendingUsername = window._pendingUsername || null;
+      window._pendingUsername = null;
+      currentUser._username = pendingUsername;
+      currentUser._usernameSet = !!pendingUsername;
+      await sb.from('users').upsert({
+        id: user.id, email: user.email, balance: balance,
+        stats: JSON.stringify(stats), dev_password: devPassword,
+        username: pendingUsername, username_set: !!pendingUsername
+      });
+      const chipLabel = pendingUsername || user.email.split('@')[0];
+      document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
     }
-
-    currentUser._username = finalUsername;
-    currentUser._usernameSet = !!(existingRow?.username_set || (finalUsername && !existingRow));
-    await sb.from('users').upsert({
-      id: user.id, email: user.email, balance: balance,
-      stats: JSON.stringify(stats), dev_password: devPassword,
-      username: finalUsername, username_set: !!finalUsername
-    });
-    const chipLabel = finalUsername || user.email.split('@')[0];
-    document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   }
+
+  // Restore auto-save now that balance/stats are correctly loaded
+  saveBalanceToSupabase = _pauseSave;
+  _authInProgress = false;
+
   updateBalance(); updateStatsUI(); updateLevelUI();
 
-  // Dev button only for admins or users with active temp dev grant
   const isAdmin = ADMIN_IDS.includes(user.id);
   if (isAdmin || currentUser._hasTempDev) document.getElementById('devBtn').style.display = 'flex';
   else document.getElementById('devBtn').style.display = 'none';
@@ -5888,7 +5902,6 @@ async function onAuthSuccess(user) {
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
   loadWinsFeed();
-  // Init chat if lobby is active
   setTimeout(() => { if (typeof chatInit === 'function') chatInit(); }, 500);
 }
 
@@ -6631,6 +6644,11 @@ loadWinsFeed = async function() {
       currentUser = null;
       balance = 0;
       stats = DEFAULT_STATS();
+    }
+    // TOKEN_REFRESHED: session token rotated, no data reload needed — just keep currentUser alive
+    // SIGNED_IN: only act if we aren't already loaded (handles email-confirmation deep links)
+    if (event === 'SIGNED_IN' && session?.user && !currentUser) {
+      await onAuthSuccess(session.user);
     }
   });
 
