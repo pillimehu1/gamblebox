@@ -1275,6 +1275,7 @@
   .pf-result .fail { color:var(--red); font-weight:700; }
   .pf-separator { height:1px; background:rgba(255,255,255,.06); margin:16px 0; }
 </style>
+</head>
 
 <!-- ── MOBILE BOTTOM NAV ── -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
@@ -2900,10 +2901,14 @@ const MINES_TOTAL=25;
 
 function minesCalcMult(gems,bombs){
   let total=MINES_TOTAL, safe=total-bombs;
+  if(gems<=0) return 1;
   let mult=1;
   for(let i=0;i<gems;i++){
-    mult*=(safe-i)/(total-i-1||1);
+    const denom = total-i-1;
+    if(denom<=0) break;
+    mult*=(safe-i)/denom;
   }
+  if(mult<=0||!isFinite(mult)) return 1;
   return Math.max(1, (1/mult)*0.97);
 }
 
@@ -2998,8 +3003,9 @@ window.minesCashout = async function() {
   const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
+  minesActive = false; // lock grid while confirm is open
   const ok = await showConfirm({ icon:'💰', title:'Cash Out?', msg:`Cash out now for ${fmt(win)}? (${mult.toFixed(2)}× on ${minesGemsFound} gem${minesGemsFound !== 1 ? 's' : ''})`, yesText:'Cash Out' });
-  if (!ok) return;
+  if (!ok) { minesActive = true; return; } // restore if cancelled
   balance += win; updateBalance();
   minesActive = false;
   renderMinesGrid(true);
@@ -4608,6 +4614,7 @@ window.crashStart = function() {
       multEl.style.color = 'var(--green)';
       document.getElementById('crashStatus').textContent = `Auto cashed out at ${crashMult.toFixed(2)}×!`;
       document.getElementById('crashStartBtn').style.display = 'block';
+      document.getElementById('crashStartBtn').disabled = false;
       document.getElementById('crashCashoutBtn').style.display = 'none';
       document.getElementById('crashBet').disabled = false;
       toast(`🤖 Auto cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
@@ -4623,6 +4630,7 @@ window.crashStart = function() {
       multEl.textContent = crashMult.toFixed(2) + '× 💀';
       document.getElementById('crashStatus').textContent = 'CRASHED!';
       document.getElementById('crashStartBtn').style.display = 'block';
+      document.getElementById('crashStartBtn').disabled = false;
       document.getElementById('crashCashoutBtn').style.display = 'none';
       document.getElementById('crashBet').disabled = false;
       toast(`💀 Crashed at ${crashMult.toFixed(2)}×`, 'lose');
@@ -4642,6 +4650,7 @@ window.crashCashout = function() {
   document.getElementById('crashMult').style.color = 'var(--green)';
   document.getElementById('crashStatus').textContent = `Cashed out at ${crashMult.toFixed(2)}×!`;
   document.getElementById('crashStartBtn').style.display = 'block';
+  document.getElementById('crashStartBtn').disabled = false;
   document.getElementById('crashCashoutBtn').style.display = 'none';
   document.getElementById('crashBet').disabled = false;
   toast(`✅ Cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
@@ -4790,14 +4799,24 @@ window.hiloGuess = function(guess) {
 
   const hiloForce = DEV.hiloForce;
   if (DEV.godMode || hiloForce === 'win') {
-    // Force correct card
-    if (guess === 'high') nextVal = Math.min(12, hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal)));
-    else nextVal = Math.max(0, Math.floor(Math.random() * hiloCurrentCardVal));
+    if (guess === 'high') {
+      // Force a card strictly higher — if already at max, pick any lower (tie still re-tries but won't lose)
+      if (hiloCurrentCardVal < 12) nextVal = hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal));
+      else nextVal = hiloCurrentCardVal; // tie — game will re-try, safe
+    } else {
+      if (hiloCurrentCardVal > 0) nextVal = Math.floor(Math.random() * hiloCurrentCardVal);
+      else nextVal = hiloCurrentCardVal; // tie
+    }
     nextCard.rank = HILO_RANKS[nextVal];
   } else if (hiloForce === 'lose') {
-    // Force wrong card (or tie which re-tries — just force opposite)
-    if (guess === 'high') nextVal = Math.max(0, Math.floor(Math.random() * hiloCurrentCardVal));
-    else nextVal = Math.min(12, hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal)));
+    if (guess === 'high') {
+      // Force a card strictly lower — if already at min, tie (house-wins behaviour)
+      if (hiloCurrentCardVal > 0) nextVal = Math.floor(Math.random() * hiloCurrentCardVal);
+      else nextVal = hiloCurrentCardVal;
+    } else {
+      if (hiloCurrentCardVal < 12) nextVal = hiloCurrentCardVal + 1 + Math.floor(Math.random() * (12 - hiloCurrentCardVal));
+      else nextVal = hiloCurrentCardVal;
+    }
     nextCard.rank = HILO_RANKS[nextVal];
   }
 
@@ -4946,9 +4965,10 @@ window.wheelSpin = function() {
     segs.forEach((s, i) => { if (s > max) { max = s; maxI = i; } });
     targetIdx = maxI;
   } else if (wheelForce === 'zero') {
-    // Find first 0 segment
-    targetIdx = segs.indexOf(0);
-    if (targetIdx === -1) targetIdx = Math.floor(Math.random() * n);
+    // Pick randomly among all zero segments
+    const zeroIdxs = segs.reduce((acc, s, i) => { if (s === 0) acc.push(i); return acc; }, []);
+    if (zeroIdxs.length > 0) targetIdx = zeroIdxs[Math.floor(Math.random() * zeroIdxs.length)];
+    else targetIdx = Math.floor(Math.random() * n);
   } else {
     targetIdx = Math.floor(Math.random() * n);
   }
@@ -5088,7 +5108,9 @@ function doGuestLogin() {
 
 // ── SIGN OUT ──
 async function doLogout() {
-  const ok = await showConfirm({ icon:'👋', title:'Sign Out?', msg:'Your balance is saved and will be here when you come back.', yesText:'Sign Out' });
+  const guestMsg = 'Your guest progress will be lost. Create an account to save your balance.';
+  const authMsg = 'Your balance is saved and will be here when you come back.';
+  const ok = await showConfirm({ icon:'👋', title:'Sign Out?', msg: isGuest ? guestMsg : authMsg, yesText:'Sign Out' });
   if (!ok) return;
   closeProfile();
   if (isGuest) {
@@ -5626,15 +5648,26 @@ async function loadMiniFeed(panel) {
   el.innerHTML = '<div class="mf-empty">Loading…</div>';
   const tab = _mfTabs[panel] || 'lucky';
   try {
-    let q = sb.from('win_feed').select('*').order('created_at', { ascending: false }).limit(5);
-    if (tab === 'lucky') q = q.gte('multiplier', 5);
-    else q = q.gte('bet', 100_000_000).order('bet', { ascending: false });
-    const { data, error } = await q;
-    if (error || !data || !data.length) {
+    // Fetch recent wins for this game and filter client-side (avoids relying on a multiplier DB column)
+    const { data, error } = await sb.from('win_feed').select('*')
+      .eq('game_type', panel)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error || !data) {
+      el.innerHTML = '<div class="mf-empty">Could not load.</div>';
+      return;
+    }
+    let filtered;
+    if (tab === 'lucky') {
+      filtered = data.filter(w => w.bet > 0 && (w.multiplier ?? (w.payout / w.bet)) >= 5).slice(0, 5);
+    } else {
+      filtered = data.filter(w => w.bet >= 100_000_000).sort((a, b) => b.bet - a.bet).slice(0, 5);
+    }
+    if (!filtered.length) {
       el.innerHTML = `<div class="mf-empty">${tab === 'lucky' ? 'No 5×+ wins yet ⚡' : 'No 100M+ bets yet 🐋'}</div>`;
       return;
     }
-    el.innerHTML = data.map(w => {
+    el.innerHTML = filtered.map(w => {
       const mult = w.multiplier ?? (w.payout / w.bet);
       const profit = w.payout - w.bet;
       const tag = tab === 'lucky'
@@ -5654,18 +5687,17 @@ async function loadMiniFeed(panel) {
   }
 }
 
-// Load mini feed whenever a game tab is shown
+// Extend showTab: load mini feed when switching to a game panel
 const _origShowTab = showTab;
 showTab = function(name) {
   _origShowTab(name);
   if (PANELS.includes(name)) loadMiniFeed(name);
 };
 
-// Also refresh mini feeds when main feed refreshes
+// After wins feed refreshes, also refresh the currently visible game mini feed
 const _origLoadWinsFeed = loadWinsFeed;
 loadWinsFeed = async function() {
   await _origLoadWinsFeed();
-  // Refresh whichever panel is currently visible
   const activePanel = PANELS.find(p => document.getElementById(`panel-${p}`)?.classList.contains('active'));
   if (activePanel) loadMiniFeed(activePanel);
 };
