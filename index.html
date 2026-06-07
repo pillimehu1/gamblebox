@@ -2564,7 +2564,7 @@ function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
   const tabs=[...document.querySelectorAll('.tab')];
-  const names=['lobby','mines','tower','roulette','blackjack','coinflip','keno','plinko'];
+  const names=['lobby','mines','tower','roulette','blackjack','coinflip','keno','plinko','reme','slots','crash','dice','hilo','wheel'];
   tabs[names.indexOf(id)]?.classList.add('active');
 }
 
@@ -3688,7 +3688,9 @@ const DEV = {
   towerForce: 'random', towerMult: 1,
   rouletteMode: 'random', rouletteNum: 7, rouletteMult: 1,
   bjMode: 'random', bjCard1: '', bjCard2: '', bjMult: 1,
-  cfForce: 'random', kenoForce: 'random', plinkoForce: 'random'
+  cfForce: 'random', kenoForce: 'random', plinkoForce: 'random',
+  remeForce: 'random', slotsForce: 'random', crashForce: 'random',
+  diceForce: 'random', hiloForce: 'random', wheelForce: 'random'
 };
 
 function openDev() {
@@ -4004,9 +4006,9 @@ window.remeSpin = function() {
       // Determine results
       let playerRaw, houseRaw;
       if (DEV.godMode) {
-        // Give player a winning non-zero non-autolose result, house gets low number
-        playerRaw = [27, 18, 9, 36, 2, 3][Math.floor(Math.random() * 6)]; // sums to 9 or similar high
-        houseRaw = Math.floor(Math.random() * 10); // low result
+        // Player gets digit sum 9 (guaranteed highest), house gets digit sum 1
+        playerRaw = [9, 18, 27, 36][Math.floor(Math.random() * 4)]; // all sum to 9
+        houseRaw = [2, 3, 4, 5, 6, 7][Math.floor(Math.random() * 6)]; // sums 2-6, always loses to 9
       } else {
         playerRaw = Math.floor(Math.random() * 37);
         houseRaw = Math.floor(Math.random() * 37);
@@ -4116,10 +4118,11 @@ window.slotsSpin = function() {
   // Determine final symbols
   let finals;
   if (DEV.godMode) {
-    const winners = Object.keys(SLOT_PAYOUTS);
-    const pick = winners[Math.floor(Math.random() * winners.length)];
-    finals = pick.match(/\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu) || [pick[0], pick[1], pick[2]];
-    // Fallback: just triple cherry
+    const winnerKeys = Object.keys(SLOT_PAYOUTS);
+    const pick = winnerKeys[Math.floor(Math.random() * winnerKeys.length)];
+    // Split by known symbols instead of unreliable regex
+    finals = SLOT_SYMBOLS.filter(s => pick.includes(s));
+    if (finals.length === 1) finals = [finals[0], finals[0], finals[0]];
     if (finals.length < 3) finals = ['🍒','🍒','🍒'];
   } else {
     finals = [slotsPickSymbol(), slotsPickSymbol(), slotsPickSymbol()];
@@ -4213,6 +4216,9 @@ function crashGetCrashPoint() {
 function crashDrawCanvas() {
   const canvas = document.getElementById('crashCanvas');
   if (!canvas) return;
+  // Sync canvas buffer size to its CSS display size
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width > 0) { canvas.width = rect.width; canvas.height = rect.height; }
   const ctx = canvas.getContext('2d');
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
@@ -4420,6 +4426,8 @@ window.hiloStart = function() {
 
 window.hiloGuess = function(guess) {
   if (!hiloActive) { toast('Start a new game first!', 'lose'); return; }
+  document.getElementById('hiloHighBtn').disabled = true;
+  document.getElementById('hiloLowBtn').disabled = true;
   syncDevInputs();
   const nextCard = hiloPickCard();
   let nextVal = hiloCardVal(nextCard.rank);
@@ -4442,6 +4450,8 @@ window.hiloGuess = function(guess) {
     msgEl.style.color = 'var(--gold)';
     hiloCurrentCard = nextCard;
     hiloCurrentCardVal = nextVal;
+    document.getElementById('hiloHighBtn').disabled = false;
+    document.getElementById('hiloLowBtn').disabled = false;
     return;
   }
 
@@ -4455,6 +4465,8 @@ window.hiloGuess = function(guess) {
     hiloCurrentCard = nextCard;
     hiloCurrentCardVal = nextVal;
     document.getElementById('hiloCashBtn').style.display = 'block';
+    document.getElementById('hiloHighBtn').disabled = false;
+    document.getElementById('hiloLowBtn').disabled = false;
     if (hiloStreak >= HILO_MULTS.length - 1) hiloCashout();
   } else {
     msgEl.textContent = `❌ Wrong! Lost ${fmt(hiloCurrentBet)}.`;
@@ -4465,10 +4477,16 @@ window.hiloGuess = function(guess) {
   }
 };
 
-window.hiloCashout = function() {
+window.hiloCashout = async function() {
   if (!hiloActive || hiloStreak === 0) return;
   const mult = HILO_MULTS[Math.min(hiloStreak, HILO_MULTS.length - 1)];
   const payout = hiloCurrentBet * mult;
+  const isAuto = hiloStreak >= HILO_MULTS.length - 1;
+  if (!isAuto) {
+    hiloActive = false; // lock buttons during confirm
+    const ok = await showConfirm({ icon:'🃏', title:'Cash Out?', msg:`Lock in ${fmt(payout)} (${mult.toFixed(2)}× · streak ${hiloStreak})?`, yesText:'Cash Out' });
+    if (!ok) { hiloActive = true; return; }
+  }
   balance += payout; updateBalance();
   toast(`💰 Hi-Lo cashed out ${mult.toFixed(2)}× → ${fmt(payout)}`, 'win');
   trackGame('hilo', hiloCurrentBet, payout, true);
@@ -4572,7 +4590,12 @@ window.wheelSpin = function() {
   // Spin to land pointer (at top = -PI/2) on targetIdx
   const targetAngle = -Math.PI/2 - (targetIdx * arc + arc/2);
   const fullSpins = (5 + Math.floor(Math.random() * 5)) * Math.PI * 2;
-  const finalAngle = targetAngle - Math.floor((targetAngle + fullSpins) / (Math.PI * 2)) * Math.PI * 2;
+  // Normalise finalAngle: spin from startAngle forward by fullSpins, landing on targetAngle
+  const normalised = ((targetAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  const startNorm = ((wheelAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  let delta = normalised - startNorm;
+  if (delta <= 0) delta += Math.PI*2;
+  const finalAngle = wheelAngle + fullSpins + delta;
   let start = null;
   const duration = 3500;
   const startAngle = wheelAngle;
@@ -4582,7 +4605,7 @@ window.wheelSpin = function() {
     const elapsed = ts - start;
     const progress = Math.min(elapsed / duration, 1);
     const ease = 1 - Math.pow(1 - progress, 4);
-    const current = startAngle + (fullSpins + (finalAngle - startAngle)) * ease;
+    const current = startAngle + (finalAngle - startAngle) * ease;
     wheelAngle = current;
     wheelDraw(current);
     if (progress < 1) {
@@ -4996,7 +5019,9 @@ function levelReward(level) {
 
 function addXp(wager, multiplier) {
   if (!currentUser) return;
-  const gained = Math.floor(wager);
+  // Base XP = wager; bonus XP for big multipliers (>2x)
+  const bonus = multiplier > 2 ? Math.floor(wager * Math.min(multiplier - 1, 10)) : 0;
+  const gained = Math.floor(wager) + bonus;
   if (gained <= 0) return;
   const oldLevel = getLevelFromXp(stats.xp || 0);
   stats.xp = (stats.xp || 0) + gained;
