@@ -1343,6 +1343,96 @@
   @media(max-width:480px) {
     .ach-panel-body { grid-template-columns:1fr; }
   }
+  /* ── CHAT ── */
+  .chat-wrap {
+    display:flex; flex-direction:column;
+    height:420px; background:var(--card);
+    border:1px solid var(--border); border-radius:18px;
+    overflow:hidden; margin-bottom:20px;
+  }
+  .chat-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; border-bottom:1px solid var(--border);
+    background:var(--card2); flex-shrink:0;
+  }
+  .chat-header-title {
+    font-family:'Cinzel Decorative',cursive;
+    font-size:.85rem; color:var(--gold); display:flex; align-items:center; gap:8px;
+  }
+  .chat-online {
+    font-size:.7rem; color:var(--green); font-family:'Rajdhani',sans-serif;
+    background:rgba(0,230,118,.1); border:1px solid rgba(0,230,118,.2);
+    border-radius:20px; padding:2px 10px;
+  }
+  .chat-messages {
+    flex:1; overflow-y:auto; padding:12px 14px;
+    display:flex; flex-direction:column; gap:8px;
+    scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.1) transparent;
+  }
+  .chat-messages::-webkit-scrollbar { width:4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
+  .chat-msg {
+    display:flex; gap:8px; align-items:flex-start;
+    animation:fadeIn .2s ease;
+  }
+  .chat-msg.is-me { flex-direction:row-reverse; }
+  .chat-avatar {
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,var(--card2),var(--card));
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.75rem; font-weight:700; color:var(--gold);
+    flex-shrink:0;
+  }
+  .chat-bubble-wrap { display:flex; flex-direction:column; gap:2px; max-width:75%; }
+  .chat-msg.is-me .chat-bubble-wrap { align-items:flex-end; }
+  .chat-meta {
+    display:flex; align-items:center; gap:6px; font-size:.65rem; color:var(--muted);
+  }
+  .chat-msg.is-me .chat-meta { flex-direction:row-reverse; }
+  .chat-username { color:var(--gold); font-weight:700; font-size:.72rem; }
+  .chat-level { font-size:.6rem; color:var(--muted); }
+  .chat-bubble {
+    background:var(--card2); border:1px solid var(--border);
+    border-radius:12px; border-bottom-left-radius:4px;
+    padding:7px 12px; font-size:.85rem; line-height:1.4;
+    word-break:break-word;
+  }
+  .chat-msg.is-me .chat-bubble {
+    background:rgba(240,192,64,.1); border-color:rgba(240,192,64,.25);
+    border-bottom-left-radius:12px; border-bottom-right-radius:4px;
+  }
+  .chat-bubble.is-system {
+    background:rgba(0,176,255,.07); border-color:rgba(0,176,255,.2);
+    color:var(--blue); font-size:.78rem; text-align:center;
+    border-radius:12px; width:100%;
+  }
+  .chat-msg.is-system { justify-content:center; }
+  .chat-time { font-size:.6rem; color:var(--muted); }
+  .chat-input-row {
+    display:flex; gap:8px; padding:10px 12px;
+    border-top:1px solid var(--border); background:var(--card2); flex-shrink:0;
+  }
+  .chat-input {
+    flex:1; background:var(--card); border:1px solid var(--border);
+    color:var(--text); font-family:'Rajdhani',sans-serif;
+    font-size:.95rem; border-radius:10px; padding:8px 14px;
+    outline:none; transition:border-color .2s;
+  }
+  .chat-input:focus { border-color:var(--gold); }
+  .chat-input:disabled { opacity:.4; }
+  .chat-send {
+    background:linear-gradient(135deg,#f0c040,#f0a000);
+    color:#000; border:none; border-radius:10px;
+    padding:8px 16px; font-family:'Rajdhani',sans-serif;
+    font-weight:700; font-size:.9rem; cursor:pointer;
+    transition:opacity .2s; flex-shrink:0;
+  }
+  .chat-send:hover { opacity:.85; }
+  .chat-send:disabled { opacity:.35; cursor:not-allowed; }
+  .chat-guest-notice {
+    text-align:center; padding:10px; font-size:.78rem; color:var(--muted);
+  }
 </style>
 </head>
 
@@ -1687,13 +1777,9 @@
     </div>
     <div style="margin-top:20px;">
       <table class="stats-table">
-        <thead><tr><th>Game</th><th>Played</th><th>Win Rate</th><th>Wagered</th></tr></thead>
+        <thead><tr><th>Game</th><th>Played</th><th>Wagered</th></tr></thead>
         <tbody id="statsBody"></tbody>
       </table>
-    </div>
-    <div style="margin-top:20px;">
-      <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;">📜 Recent Game History</div>
-      <div id="statsHistory" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
     </div>
     <div style="margin-top:20px; text-align:right;">
       <button class="dev-reset" onclick="resetStats()">⟳ Reset All Stats</button>
@@ -2142,6 +2228,24 @@
         </div>
       </div>
       <div class="wins-feed" id="winsFeed"><div class="wf-empty">Loading…</div></div>
+    </div>
+
+    <!-- 💬 Live Chat -->
+    <div class="chat-wrap" id="chatWrap">
+      <div class="chat-header">
+        <div class="chat-header-title">
+          💬 Live Chat
+          <span class="chat-online" id="chatOnlineCount">● Online</span>
+        </div>
+        <span style="font-size:.7rem;color:var(--muted)">Keep it friendly 🤝</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px;">Loading chat…</div>
+      </div>
+      <div class="chat-input-row" id="chatInputRow">
+        <input class="chat-input" id="chatInput" placeholder="Send a message…" maxlength="200" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend();}">
+        <button class="chat-send" id="chatSendBtn" onclick="chatSend()">Send</button>
+      </div>
     </div>
   </div>
 
@@ -2787,21 +2891,20 @@ const DEFAULT_STATS = () => ({
   globalAtl: 0,
   xp: 0,
   level: 1,
-  history: [],
   games: {
-    mines:     { played: 0, wagered: 0, wins: 0 },
-    tower:     { played: 0, wagered: 0, wins: 0 },
-    roulette:  { played: 0, wagered: 0, wins: 0 },
-    blackjack: { played: 0, wagered: 0, wins: 0 },
-    coinflip:  { played: 0, wagered: 0, wins: 0 },
-    keno:      { played: 0, wagered: 0, wins: 0 },
-    plinko:    { played: 0, wagered: 0, wins: 0 },
-    reme:      { played: 0, wagered: 0, wins: 0 },
-    slots:     { played: 0, wagered: 0, wins: 0 },
-    crash:     { played: 0, wagered: 0, wins: 0 },
-    dice:      { played: 0, wagered: 0, wins: 0 },
-    hilo:      { played: 0, wagered: 0, wins: 0 },
-    wheel:     { played: 0, wagered: 0, wins: 0 }
+    mines:     { played: 0, wagered: 0 },
+    tower:     { played: 0, wagered: 0 },
+    roulette:  { played: 0, wagered: 0 },
+    blackjack: { played: 0, wagered: 0 },
+    coinflip:  { played: 0, wagered: 0 },
+    keno:      { played: 0, wagered: 0 },
+    plinko:    { played: 0, wagered: 0 },
+    reme:      { played: 0, wagered: 0 },
+    slots:     { played: 0, wagered: 0 },
+    crash:     { played: 0, wagered: 0 },
+    dice:      { played: 0, wagered: 0 },
+    hilo:      { played: 0, wagered: 0 },
+    wheel:     { played: 0, wagered: 0 }
   }
 });
 let stats = DEFAULT_STATS();
@@ -2830,70 +2933,43 @@ function updateStatsUI() {
   document.getElementById('statsGames').textContent = stats.gamesPlayed;
   document.getElementById('statsWins').textContent = stats.wins;
   document.getElementById('statsWagered').textContent = fmt(stats.totalWagered);
-
+  
   const profitEl = document.getElementById('statsProfit');
   profitEl.textContent = (stats.netProfit >= 0 ? '+' : '') + fmt(stats.netProfit);
   profitEl.className = 'stat-val ' + (stats.netProfit >= 0 ? 'win-color' : 'lose-color');
-
+  
   document.getElementById('statsGlobalAth').textContent = fmt(stats.globalAth);
   document.getElementById('statsGlobalAtl').textContent = fmt(stats.globalAtl);
 
-  // Per-game table with win rate
   let html = '';
   for(let g in stats.games) {
-    const d = stats.games[g];
+    let d = stats.games[g];
     const wr = d.played > 0 ? Math.round((d.wins||0) / d.played * 100) : 0;
-    const wrColor = wr >= 50 ? 'var(--green)' : wr > 0 ? 'var(--gold)' : 'var(--muted)';
     html += `<tr>
-      <td style="text-transform:capitalize;">${GAME_ICONS[g] || ''} ${g}</td>
+      <td style="text-transform:capitalize;">${g}</td>
       <td>${d.played}</td>
-      <td style="color:${wrColor}">${d.played > 0 ? wr + '%' : '—'}</td>
       <td>${fmt(d.wagered)}</td>
     </tr>`;
   }
   document.getElementById('statsBody').innerHTML = html;
-
-  // Game history
-  const hist = stats.history || [];
-  const histEl = document.getElementById('statsHistory');
-  if (!hist.length) {
-    histEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;padding:12px;">No games played yet.</div>';
-  } else {
-    histEl.innerHTML = hist.map(h => {
-      const won = h.p > h.b;
-      const mult = h.b > 0 ? (h.p / h.b).toFixed(2) : '0.00';
-      const net = h.p - h.b;
-      const ago = timeAgo(new Date(h.t));
-      return `<div style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid ${won ? 'rgba(0,230,118,.2)' : 'rgba(255,23,68,.15)'};border-radius:8px;padding:8px 12px;font-size:.8rem;">
-        <span style="font-size:1rem">${GAME_ICONS[h.g] || '🎰'}</span>
-        <span style="text-transform:capitalize;color:var(--text);flex:1">${h.g}</span>
-        <span style="color:var(--muted)">${mult}×</span>
-        <span style="color:${won ? 'var(--green)' : 'var(--red)'};">${won ? '+' : ''}${fmt(net)}</span>
-        <span style="color:var(--muted);font-size:.7rem">${ago}</span>
-      </div>`;
-    }).join('');
-  }
 }
 
 function trackGame(gameType, bet, payout, isWin) {
-  _pfNonce++;
   stats.gamesPlayed++;
   if (isWin) stats.wins++;
   stats.totalWagered += bet;
+  
   const net = payout - bet;
   stats.netProfit += net;
+  
   if (net > stats.globalAth) stats.globalAth = net;
   if (net < stats.globalAtl) stats.globalAtl = net;
+
   if(stats.games[gameType]) {
     stats.games[gameType].played++;
     stats.games[gameType].wagered += bet;
-    if (isWin) stats.games[gameType].wins = (stats.games[gameType].wins || 0) + 1;
   }
-  // Game history (last 50)
-  if (!stats.history) stats.history = [];
-  stats.history.unshift({ g: gameType, b: Math.round(bet), p: Math.round(payout), t: Date.now() });
-  if (stats.history.length > 50) stats.history.length = 50;
-
+  
   saveState();
   if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI();
 
@@ -3098,7 +3174,6 @@ window.minesClick = function(i) {
     trackGame('mines', currentMinesBet, 0, false);
   } else {
     minesGemsFound++;
-    _achMinesGems = minesGemsFound;
     if (minesGemsFound === 1) document.getElementById('minesCashBtn').disabled = false;
     const bombs = parseInt(document.getElementById('minesCount').value) || 3;
     const baseMult = minesCalcMult(minesGemsFound, bombs);
@@ -4447,71 +4522,36 @@ setInterval(() => {
 //  ACHIEVEMENTS SYSTEM
 // ════════════════════════════════════════════════════════════
 const ACHIEVEMENTS = [
-  // ── General ──
-  { id:'first_bet',     icon:'🎲', name:'First Bet',        desc:'Place your very first bet.',                         check: s => s.gamesPlayed >= 1 },
-  { id:'first_win',     icon:'🏆', name:'First Win',        desc:'Win your first game.',                               check: s => s.wins >= 1 },
-  { id:'veteran',       icon:'🎖️', name:'Veteran',          desc:'Play 100 games.',                                    check: s => s.gamesPlayed >= 100 },
-  { id:'grinder',       icon:'⚙️', name:'Grinder',          desc:'Play 500 games.',                                    check: s => s.gamesPlayed >= 500 },
-  { id:'high_roller',   icon:'💰', name:'High Roller',      desc:'Wager over $1,000,000 total.',                       check: s => s.totalWagered >= 1_000_000 },
-  { id:'whale',         icon:'🐋', name:'Whale',            desc:'Wager over $1,000,000,000 total.',                   check: s => s.totalWagered >= 1_000_000_000 },
-  { id:'profit_100k',   icon:'📈', name:'In the Money',     desc:'Reach $100,000 net profit.',                         check: s => s.netProfit >= 100_000 },
-  { id:'profit_1m',     icon:'🤑', name:'Millionaire',      desc:'Reach $1,000,000 net profit.',                       check: s => s.netProfit >= 1_000_000 },
-  { id:'all_games',     icon:'🌟', name:'Game Explorer',    desc:'Play every single game at least once.',              check: s => Object.values(s.games).every(g => g.played >= 1) },
-  { id:'lucky_streak',  icon:'🔥', name:'On Fire',          desc:'Win 10 games in a row (tracked this session).',      check: () => _achStreak >= 10 },
-  { id:'ath_1m',        icon:'💎', name:'Diamond Hands',    desc:'Win $1,000,000 or more in a single game.',           check: s => s.globalAth >= 1_000_000 },
-  { id:'tipper',        icon:'💸', name:'Generous',         desc:'Send a tip to another player.',                      check: s => s._achTipped === true },
-  // ── Levels ──
-  { id:'level10',       icon:'⭐', name:'Rising Star',      desc:'Reach Level 10.',                                    check: s => getLevelFromXp(s.xp||0) >= 10 },
-  { id:'level50',       icon:'🌠', name:'Elite',            desc:'Reach Level 50.',                                    check: s => getLevelFromXp(s.xp||0) >= 50 },
-  { id:'level100',      icon:'👑', name:'Legend',           desc:'Reach Level 100.',                                   check: s => getLevelFromXp(s.xp||0) >= 100 },
-  // ── Per-game ──
-  { id:'mines_pro',     icon:'💣', name:'Mine Sweeper',     desc:'Play Mines 50 times.',                               check: s => (s.games.mines?.played||0) >= 50 },
-  { id:'mines_master',  icon:'🧨', name:'Bomb Defuser',     desc:'Reveal 10 gems in a single Mines round.',            check: () => _achMinesGems >= 10 },
-  { id:'bj_pro',        icon:'🃏', name:'Card Shark',       desc:'Play Blackjack 50 times.',                           check: s => (s.games.blackjack?.played||0) >= 50 },
-  { id:'crash_pro',     icon:'💀', name:'Crash Landing',    desc:'Play Crash 50 times.',                               check: s => (s.games.crash?.played||0) >= 50 },
-  { id:'crash_high',    icon:'🚀', name:'To The Moon',      desc:'Cash out Crash at 10× or higher.',                   check: () => _achCrashMult >= 10 },
-  { id:'hilo_streak',   icon:'🃏', name:'Hot Hand',         desc:'Reach a Hi-Lo streak of 8.',                         check: () => _achHiloStreak >= 8 },
-  { id:'roulette_pro',  icon:'🎡', name:'Roulette Wheel',   desc:'Play Roulette 50 times.',                            check: s => (s.games.roulette?.played||0) >= 50 },
-  { id:'plinko_pro',    icon:'🔽', name:'Plinko Pro',       desc:'Play Plinko 50 times.',                              check: s => (s.games.plinko?.played||0) >= 50 },
-  { id:'slots_jackpot', icon:'🎰', name:'Jackpot!',         desc:'Hit the 💎💎💎 jackpot in Slots.',                   check: () => _achSlotsJackpot },
-  { id:'dice_pro',      icon:'🎲', name:'Lucky Roll',       desc:'Play Dice 50 times.',                                check: s => (s.games.dice?.played||0) >= 50 },
-  { id:'wheel_pro',     icon:'🎡', name:'Wheel Watcher',    desc:'Play Wheel 50 times.',                               check: s => (s.games.wheel?.played||0) >= 50 },
-  { id:'tower_pro',     icon:'🗼', name:'Tower Climber',    desc:'Play Tower 50 times.',                               check: s => (s.games.tower?.played||0) >= 50 },
-  { id:'keno_pro',      icon:'🔢', name:'Keno King',        desc:'Play Keno 50 times.',                                check: s => (s.games.keno?.played||0) >= 50 },
-  { id:'coinflip_pro',  icon:'🪙', name:'Coin Collector',   desc:'Play Coinflip 50 times.',                            check: s => (s.games.coinflip?.played||0) >= 50 },
-  { id:'reme_pro',      icon:'🎱', name:'Reme Master',      desc:'Play Reme 50 times.',                                check: s => (s.games.reme?.played||0) >= 50 },
+  { id:'first_bet',    icon:'🎲', name:'First Bet',        desc:'Place your very first bet.',                    check: s => s.gamesPlayed >= 1 },
+  { id:'first_win',    icon:'🏆', name:'First Win',        desc:'Win your first game.',                          check: s => s.wins >= 1 },
+  { id:'veteran',      icon:'🎖️', name:'Veteran',          desc:'Play 100 games.',                               check: s => s.gamesPlayed >= 100 },
+  { id:'high_roller',  icon:'💰', name:'High Roller',      desc:'Wager over $1,000,000 total.',                  check: s => s.totalWagered >= 1_000_000 },
+  { id:'whale',        icon:'🐋', name:'Whale',            desc:'Wager over $1,000,000,000 total.',              check: s => s.totalWagered >= 1_000_000_000 },
+  { id:'profit_100k',  icon:'📈', name:'In the Money',     desc:'Reach $100,000 net profit.',                    check: s => s.netProfit >= 100_000 },
+  { id:'all_games',    icon:'🌟', name:'Game Explorer',    desc:'Play every single game at least once.',         check: s => Object.values(s.games).every(g => g.played >= 1) },
+  { id:'lucky_streak', icon:'🔥', name:'On Fire',          desc:'Win 10 games in a row (tracked this session).', check: () => _achStreak >= 10 },
+  { id:'mines_pro',    icon:'💣', name:'Mine Sweeper',     desc:'Play Mines 50 times.',                          check: s => (s.games.mines?.played||0) >= 50 },
+  { id:'bj_pro',       icon:'🃏', name:'Card Shark',       desc:'Play Blackjack 50 times.',                      check: s => (s.games.blackjack?.played||0) >= 50 },
+  { id:'crash_pro',    icon:'💀', name:'Crash Landing',    desc:'Play Crash 50 times.',                          check: s => (s.games.crash?.played||0) >= 50 },
+  { id:'level10',      icon:'⭐', name:'Rising Star',      desc:'Reach Level 10.',                               check: s => (s.level||1) >= 10 },
+  { id:'level50',      icon:'🌠', name:'Elite',            desc:'Reach Level 50.',                               check: s => (s.level||1) >= 50 },
+  { id:'ath_1m',       icon:'💎', name:'Diamond Hands',   desc:'Win $1,000,000 or more in a single game.',      check: s => s.globalAth >= 1_000_000 },
+  { id:'tipper',       icon:'💸', name:'Generous',         desc:'Send a tip to another player.',                 check: () => _achTipped },
 ];
 
-// Session-only trackers
+// Session-only trackers (don't persist — intentional for streak/tip)
 let _achStreak = 0;
-let _achMinesGems = 0;   // tracks gems revealed in current mines round
-let _achCrashMult = 0;   // tracks highest crash cashout mult this session
-let _achHiloStreak = 0;  // tracks highest hilo streak this session
-let _achSlotsJackpot = false;
-let _achUnlocked = new Set();
-
-// Load achievements from Supabase (called after login)
-function _achLoad(savedArr) {
-  _achUnlocked = new Set(Array.isArray(savedArr) ? savedArr : []);
-}
-
-// Save achievements to Supabase via the normal stats save
-function _achSave() {
-  if (!currentUser || isGuest) return;
-  // Piggyback on debounced save — store unlocked IDs in stats._achievements
-  stats._achievements = [..._achUnlocked];
-  // Also persist _achTipped so it survives page reloads
-  stats._achTipped = _achTipped;
-  saveBalanceToSupabase();
-}
-
 let _achTipped = false;
+let _achUnlocked = new Set(JSON.parse(localStorage.getItem('rc_ach') || '[]'));
+
+function _achSave() {
+  localStorage.setItem('rc_ach', JSON.stringify([..._achUnlocked]));
+}
 
 function _achCheck() {
-  const augmented = { ...stats, _achTipped };
   ACHIEVEMENTS.forEach(a => {
     if (_achUnlocked.has(a.id)) return;
-    if (a.check(augmented)) {
+    if (a.check(stats)) {
       _achUnlocked.add(a.id);
       _achSave();
       _showAchToast(a);
@@ -4922,7 +4962,6 @@ window.slotsSpin = function() {
             resultEl.textContent = `🎉 ${finals.join('')} — ${SLOT_PAYOUTS[key]}× → +${fmt(payout)}`;
             resultEl.style.color = 'var(--gold)';
             toast(`🎰 ${SLOT_PAYOUTS[key]}×! Won ${fmt(payout)}`, 'win');
-            if (key === '💎💎💎') _achSlotsJackpot = true;
             trackGame('slots', bet, payout, true);
           } else if (finals[0] === finals[1] || finals[1] === finals[2] || finals[0] === finals[2]) {
             // Any two matching
@@ -5096,7 +5135,6 @@ window.crashCashout = function() {
   document.getElementById('crashCashoutBtn').style.display = 'none';
   document.getElementById('crashBet').disabled = false;
   toast(`✅ Cashed out ${crashMult.toFixed(2)}× → ${fmt(payout)}`, 'win');
-  if (crashMult > _achCrashMult) _achCrashMult = crashMult;
   trackGame('crash', crashCurrentBet, payout, true);
   crashAddHistory(crashMult, true);
 };
@@ -5281,7 +5319,6 @@ window.hiloGuess = function(guess) {
 
   if (won) {
     hiloStreak++;
-    if (hiloStreak > _achHiloStreak) _achHiloStreak = hiloStreak;
     const mult = HILO_MULTS[Math.min(hiloStreak, HILO_MULTS.length - 1)];
     document.getElementById('hiloStreak').textContent = hiloStreak;
     document.getElementById('hiloMult').textContent = mult.toFixed(2) + '×';
@@ -5608,9 +5645,6 @@ async function onAuthSuccess(user) {
     }
     currentUser._username = data.username || null;
     currentUser._usernameSet = data.username_set || false;
-    // Restore achievements from saved stats
-    _achLoad(stats._achievements || []);
-    _achTipped = stats._achTipped || false;
     // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
@@ -5637,6 +5671,8 @@ async function onAuthSuccess(user) {
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
   loadWinsFeed();
+  // Init chat if lobby is active
+  setTimeout(() => { if (typeof chatInit === 'function') chatInit(); }, 500);
 }
 
 // ── SAVE TO SUPABASE (debounced — waits 1.5s after last call) ──
@@ -6261,8 +6297,162 @@ function openPF() {
 }
 function closePF() { document.getElementById('pfOverlay').classList.remove('open'); }
 document.getElementById('pfOverlay').addEventListener('click', function(e) { if (e.target === this) closePF(); });
-// Auto-init seed on page load
-pfNewPair();
+// ════════════════════════════════════════════════════════════
+//  LIVE CHAT
+// ════════════════════════════════════════════════════════════
+const CHAT_MAX_VISIBLE = 80;  // messages kept in DOM
+const CHAT_MSG_COOLDOWN = 1500; // ms between sends
+let _chatLastSend = 0;
+let _chatChannel = null;
+let _chatLoaded = false;
+let _chatPresenceChannel = null;
+let _chatOnlineCount = 0;
+
+// Profanity filter — basic blocklist, extend as needed
+const _chatBanned = ['fuck','shit','ass','bitch','cunt','dick','piss','cock'];
+function _chatFilter(msg) {
+  let out = msg;
+  _chatBanned.forEach(w => {
+    const re = new RegExp(w, 'gi');
+    out = out.replace(re, '*'.repeat(w.length));
+  });
+  return out;
+}
+
+function _chatTimeStr(ts) {
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function _chatAppendMsg(row, scroll = true) {
+  const el = document.getElementById('chatMessages');
+  if (!el) return;
+
+  const div = document.createElement('div');
+
+  if (row.is_system) {
+    div.className = 'chat-msg is-system';
+    div.innerHTML = `<div class="chat-bubble is-system">${_escHtml(row.message)}</div>`;
+  } else {
+    const isMe = row.username === currentUser?._username;
+    const initial = (row.username || '?')[0].toUpperCase();
+    const lvl = row.level || 1;
+    div.className = 'chat-msg' + (isMe ? ' is-me' : '');
+    div.innerHTML = `
+      <div class="chat-avatar">${initial}</div>
+      <div class="chat-bubble-wrap">
+        <div class="chat-meta">
+          <span class="chat-username">${_escHtml(row.username || 'Anonymous')}</span>
+          <span class="chat-level">Lv ${lvl}</span>
+          <span class="chat-time">${_chatTimeStr(row.created_at)}</span>
+        </div>
+        <div class="chat-bubble">${_escHtml(row.message)}</div>
+      </div>`;
+  }
+
+  el.appendChild(div);
+
+  // Trim old messages from DOM
+  while (el.children.length > CHAT_MAX_VISIBLE) el.removeChild(el.firstChild);
+
+  if (scroll) el.scrollTop = el.scrollHeight;
+}
+
+function _escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function chatInit() {
+  if (_chatLoaded) return;
+  _chatLoaded = true;
+
+  // Load last 40 messages
+  const { data } = await sb.from('chat_messages')
+    .select('*').order('created_at', { ascending: false }).limit(40);
+
+  const el = document.getElementById('chatMessages');
+  el.innerHTML = '';
+
+  if (data && data.length) {
+    [...data].reverse().forEach(row => _chatAppendMsg(row, false));
+    el.scrollTop = el.scrollHeight;
+  } else {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px;">No messages yet. Say hi! 👋</div>';
+  }
+
+  // Realtime subscription
+  _chatChannel = sb.channel('chat_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+      // Clear the "no messages" placeholder if present
+      const placeholder = document.getElementById('chatMessages').querySelector('div[style]');
+      if (placeholder && placeholder.textContent.includes('Say hi')) placeholder.remove();
+      _chatAppendMsg(payload.new, true);
+    })
+    .subscribe();
+
+  // Presence for online count
+  _chatPresenceChannel = sb.channel('chat_presence', { config: { presence: { key: currentUser?.id || 'guest' } } });
+  _chatPresenceChannel
+    .on('presence', { event: 'sync' }, () => {
+      const state = _chatPresenceChannel.presenceState();
+      _chatOnlineCount = Object.keys(state).length;
+      const el = document.getElementById('chatOnlineCount');
+      if (el) el.textContent = `● ${_chatOnlineCount} Online`;
+    })
+    .subscribe(async status => {
+      if (status === 'SUBSCRIBED') {
+        await _chatPresenceChannel.track({ username: currentUser?._username || 'Guest' });
+      }
+    });
+
+  // Show guest notice if not logged in
+  if (!currentUser || isGuest) {
+    document.getElementById('chatInput').disabled = true;
+    document.getElementById('chatSendBtn').disabled = true;
+    document.getElementById('chatInputRow').innerHTML = '<div class="chat-guest-notice">🔒 <a href="#" onclick="closeProfile();document.getElementById(\'authOverlay\').classList.remove(\'hidden\')" style="color:var(--gold)">Sign in</a> to chat</div>';
+  }
+}
+
+async function chatSend() {
+  if (!currentUser || isGuest) return;
+  const input = document.getElementById('chatInput');
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  // Cooldown
+  const now = Date.now();
+  if (now - _chatLastSend < CHAT_MSG_COOLDOWN) {
+    toast('⏳ Slow down a little!', '');
+    return;
+  }
+  _chatLastSend = now;
+
+  const message = _chatFilter(raw.slice(0, 200));
+  input.value = '';
+
+  const lvl = getLevelFromXp(stats.xp || 0);
+  await sb.from('chat_messages').insert({
+    username: currentUser._username || currentUser.email.split('@')[0],
+    message,
+    level: lvl,
+    user_id: currentUser.id
+  });
+}
+
+// Load chat when lobby is shown
+const _origShowTabChat = showTab;
+showTab = function(name) {
+  _origShowTabChat(name);
+  if (name === 'lobby' && currentUser && !isGuest) chatInit();
+};
+
+// Also init on page load if lobby is active
+document.addEventListener('DOMContentLoaded', () => {
+  if (currentUser && !isGuest) chatInit();
+});
+
 </script>
 </body>
 </html>
