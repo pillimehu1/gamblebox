@@ -1233,7 +1233,7 @@
     <button class="hdr-btn hdr-btn-stats" onclick="openStats()" title="Stats">📊</button>
     <button class="hdr-btn hdr-btn-lb" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
     <button class="hdr-btn hdr-btn-tips" onclick="openTipLog()" title="Tip Log">💸</button>
-    <button class="hdr-btn hdr-btn-dev" onclick="openDev()" title="Dev Panel">⚙️</button>
+    <button class="hdr-btn hdr-btn-dev" id="devBtn" onclick="openDev()" title="Dev Panel">⚙️</button>
     <button class="hdr-btn hdr-btn-add" onclick="openModal()">+ Add Funds</button>
     <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
       <span>👤</span>
@@ -3629,6 +3629,7 @@ function doGuestLogin() {
   document.getElementById('rcLoadingScreen').style.display = 'none';
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('userChipLabel').textContent = '🎲 Guest';
+  document.getElementById('devBtn').style.display = 'none'; // guests can't access dev
   updateBalance();
   updateStatsUI();
   updateLevelUI();
@@ -3645,7 +3646,9 @@ async function doLogout() {
     currentUser = null;
     balance = 0;
     stats = DEFAULT_STATS();
+    clearTimeout(_saveTimer);
     document.getElementById('userChip').style.display = 'none';
+    document.getElementById('devBtn').style.display = 'flex'; // restore for next login
     document.getElementById('authOverlay').classList.remove('hidden');
     document.getElementById('loginError').textContent = '';
     return;
@@ -3669,8 +3672,10 @@ async function onAuthSuccess(user) {
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('rcLoadingScreen').style.display = 'none';
+  document.getElementById('devBtn').style.display = 'flex'; // real accounts get dev access
 
   // Always load from Supabase
+  let isNewUser = false;
   const { data, error } = await sb
     .from('users')
     .select('balance, stats, dev_password, username, username_set')
@@ -3691,11 +3696,11 @@ async function onAuthSuccess(user) {
     }
     currentUser._username = data.username || null;
     currentUser._usernameSet = data.username_set || false;
-    // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   } else {
     // Brand new user
+    isNewUser = true;
     balance = 1000;
     stats = DEFAULT_STATS();
     devPassword = 'admin';
@@ -3714,7 +3719,6 @@ async function onAuthSuccess(user) {
   updateBalance();
   updateStatsUI();
   updateLevelUI();
-  const isNewUser = !data || !!error;
   const displayName = currentUser._username || user.email.split('@')[0];
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
@@ -3893,8 +3897,8 @@ async function doSendResetEmail() {
 
 // ════════════════════════════════════════════════════════════
 //  LEVEL SYSTEM
-//  XP = wager × multiplier won (0 on loss)
-//  XP needed for level N = 1000 × N^1.4  (scales up forever)
+//  XP = wager amount (every bet earns XP win or lose)
+//  XP needed for level N = 500 × N  up to level 100, then scales steeply
 //  Every 10 levels: reward = 200 × (tier^1.6)  where tier = level/10
 // ════════════════════════════════════════════════════════════
 function xpForLevel(n) {
@@ -4137,12 +4141,19 @@ async function checkDailyBonus() {
   if (diffHours < 24) return; // Already claimed today
 
   const bonus = 100;
-  // Use fresh server balance to avoid overwriting with stale local value
   const freshBalance = parseFloat(data.balance) || balance;
   balance = freshBalance + bonus;
-  // Update display without triggering another Supabase save (we do it below)
   document.getElementById('balanceDisplay').textContent = fmt(balance);
-  await sb.from('users').upsert({ id: currentUser.id, last_bonus_at: now.toISOString(), balance: balance });
+  // Save full row to avoid partial overwrites
+  clearTimeout(_saveTimer);
+  await sb.from('users').upsert({
+    id: currentUser.id,
+    email: currentUser.email,
+    balance: balance,
+    stats: JSON.stringify(stats),
+    dev_password: devPassword,
+    last_bonus_at: now.toISOString()
+  });
 
   // Show bonus toast
   const el = document.createElement('div');
