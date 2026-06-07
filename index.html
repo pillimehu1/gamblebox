@@ -1433,6 +1433,76 @@
   .chat-guest-notice {
     text-align:center; padding:10px; font-size:.78rem; color:var(--muted);
   }
+  /* ── ADMIN PANEL ── */
+  .admin-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.92); backdrop-filter:blur(10px);
+    z-index:500; align-items:flex-start; justify-content:center;
+    padding:16px 16px 40px; overflow-y:auto;
+  }
+  .admin-overlay.open { display:flex; }
+  .admin-panel {
+    background:#0a0a14;
+    border:1px solid rgba(255,23,68,.4);
+    border-radius:24px; width:min(540px,100%);
+    box-shadow:0 0 80px rgba(255,23,68,.1);
+    animation:fadeIn .3s ease; margin:auto; overflow:hidden;
+  }
+  .admin-panel-header {
+    position:sticky; top:0; z-index:10;
+    background:#0a0a14; border-bottom:1px solid rgba(255,23,68,.2);
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 22px;
+  }
+  .admin-title {
+    font-family:'Cinzel Decorative',cursive; font-size:.95rem; color:var(--red);
+    display:flex; align-items:center; gap:8px;
+  }
+  .admin-badge {
+    font-size:.55rem; background:rgba(255,23,68,.15); border:1px solid rgba(255,23,68,.3);
+    color:var(--red); border-radius:4px; padding:2px 7px; letter-spacing:1.5px;
+    text-transform:uppercase;
+  }
+  .admin-body { padding:20px 22px 28px; }
+  .admin-section {
+    background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06);
+    border-radius:14px; padding:18px; margin-bottom:14px;
+  }
+  .admin-section-title {
+    font-size:.68rem; text-transform:uppercase; letter-spacing:2px;
+    color:var(--red); margin-bottom:14px; display:flex; align-items:center; gap:6px;
+  }
+  .admin-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .admin-row:last-child { margin-bottom:0; }
+  .admin-input {
+    flex:1; min-width:120px; background:#12121e; border:1px solid rgba(255,255,255,.1);
+    color:var(--text); font-family:'Rajdhani',sans-serif; font-size:.95rem; font-weight:600;
+    border-radius:8px; padding:9px 12px; outline:none; transition:border-color .2s;
+  }
+  .admin-input:focus { border-color:var(--red); }
+  .admin-btn {
+    background:rgba(255,23,68,.12); border:1px solid rgba(255,23,68,.35);
+    color:var(--red); font-family:'Rajdhani',sans-serif; font-weight:700;
+    font-size:.82rem; border-radius:8px; padding:9px 16px;
+    cursor:pointer; transition:all .2s; letter-spacing:.5px; white-space:nowrap;
+  }
+  .admin-btn:hover { background:rgba(255,23,68,.25); }
+  .admin-btn.green { background:rgba(0,230,118,.1); border-color:rgba(0,230,118,.35); color:var(--green); }
+  .admin-btn.green:hover { background:rgba(0,230,118,.22); }
+  .admin-btn.blue { background:rgba(0,176,255,.1); border-color:rgba(0,176,255,.35); color:var(--blue); }
+  .admin-btn.blue:hover { background:rgba(0,176,255,.22); }
+  .admin-btn.gold { background:rgba(240,192,64,.1); border-color:rgba(240,192,64,.35); color:var(--gold); }
+  .admin-btn.gold:hover { background:rgba(240,192,64,.22); }
+  .admin-msg { font-size:.8rem; margin-top:8px; min-height:18px; }
+  .admin-msg.ok { color:var(--green); }
+  .admin-msg.err { color:var(--red); }
+  .admin-label { font-size:.75rem; color:var(--muted); min-width:80px; }
+  .admin-user-card {
+    background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+    border-radius:10px; padding:12px 14px; margin-bottom:8px; font-size:.82rem;
+  }
+  .admin-user-card .un { font-weight:700; color:var(--gold); }
+  .admin-user-card .detail { color:var(--muted); font-size:.72rem; margin-top:3px; }
 </style>
 </head>
 
@@ -1585,6 +1655,7 @@
     <button class="hdr-btn" style="border-color:rgba(0,176,255,.35);color:rgba(0,176,255,.7);" onclick="openPF()" title="Provably Fair">🔐</button>
     <button class="hdr-btn" id="soundBtn" onclick="toggleSound()" title="Sound" style="border-color:rgba(0,230,118,.35);color:rgba(0,230,118,.7);">🔊</button>
     <button class="hdr-btn hdr-btn-dev" id="devBtn" onclick="openDev()" title="Dev Panel">⚙️</button>
+    <button class="hdr-btn" id="adminBtn" onclick="openAdmin()" title="Admin Panel" style="display:none;border-color:rgba(255,23,68,.4);color:var(--red);">👑</button>
     <button class="hdr-btn hdr-btn-add" onclick="openModal()">+ Add Funds</button>
     <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
       <span>👤</span>
@@ -1641,7 +1712,79 @@
   </div>
 </div>
 
-<!-- ── TIP LOG OVERLAY ── -->
+<!-- ── ADMIN PANEL ── -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-panel-header">
+      <div class="admin-title">👑 Admin Panel <span class="admin-badge">Owner</span></div>
+      <button class="dev-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+
+      <!-- LOOKUP USER -->
+      <div class="admin-section">
+        <div class="admin-section-title">🔍 Look Up User</div>
+        <div class="admin-row">
+          <input class="admin-input" id="adminLookupUser" placeholder="Username" maxlength="20">
+          <button class="admin-btn blue" onclick="adminLookup()">Look Up</button>
+        </div>
+        <div id="adminUserCard" style="display:none;" class="admin-user-card">
+          <div class="un" id="adminCardUsername"></div>
+          <div class="detail" id="adminCardDetail"></div>
+        </div>
+        <div class="admin-msg" id="adminLookupMsg"></div>
+      </div>
+
+      <!-- CHANGE BALANCE -->
+      <div class="admin-section">
+        <div class="admin-section-title">💰 Set Balance</div>
+        <div class="admin-row">
+          <input class="admin-input" id="adminBalUser" placeholder="Username" maxlength="20">
+          <input class="admin-input" id="adminBalAmount" placeholder="New balance" type="number" min="0" style="max-width:130px;">
+          <button class="admin-btn gold" onclick="adminSetBalance()">Set</button>
+        </div>
+        <div class="admin-msg" id="adminBalMsg"></div>
+      </div>
+
+      <!-- RESET ACCOUNT -->
+      <div class="admin-section">
+        <div class="admin-section-title">🔄 Reset Account</div>
+        <div class="admin-row">
+          <input class="admin-input" id="adminResetUser" placeholder="Username" maxlength="20">
+          <button class="admin-btn" onclick="adminResetAccount()">Reset to Default</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Wipes balance to $1,000 and clears all stats & XP.</div>
+        <div class="admin-msg" id="adminResetMsg"></div>
+      </div>
+
+      <!-- DISABLE / ENABLE BETTING -->
+      <div class="admin-section">
+        <div class="admin-section-title">🚫 Disable / Enable Betting</div>
+        <div class="admin-row">
+          <input class="admin-input" id="adminBanUser" placeholder="Username" maxlength="20">
+          <button class="admin-btn" onclick="adminToggleBan(true)">Disable Betting</button>
+          <button class="admin-btn green" onclick="adminToggleBan(false)">Enable Betting</button>
+        </div>
+        <div class="admin-msg" id="adminBanMsg"></div>
+      </div>
+
+      <!-- TEMP DEV TOOLS -->
+      <div class="admin-section">
+        <div class="admin-section-title">🛠 Grant Temporary Dev Tools</div>
+        <div class="admin-row">
+          <input class="admin-input" id="adminDevUser" placeholder="Username" maxlength="20">
+          <input class="admin-input" id="adminDevHours" placeholder="Hours" type="number" min="1" max="168" style="max-width:80px;">
+          <button class="admin-btn blue" onclick="adminGrantDev()">Grant</button>
+          <button class="admin-btn" onclick="adminRevokeDev()">Revoke</button>
+        </div>
+        <div class="admin-msg" id="adminDevMsg"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
 <div class="generic-overlay" id="tipLogOverlay">
   <div class="generic-panel">
     <div class="generic-panel-header">
@@ -3077,6 +3220,7 @@ document.querySelectorAll('.bet-input[type="number"]').forEach(el => {
 });
 
 function deductBet(amount) {
+  if (currentUser?._bettingDisabled) { toast('🚫 Your betting has been disabled. Contact admin.', 'lose'); return false; }
   if (devInfiniteBalance) { balance = 999999999; updateBalance(); return true; }
   if (amount > balance) return false;
   balance -= amount; updateBalance(); return true;
@@ -5609,6 +5753,7 @@ async function doLogout() {
   await sb.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
+  document.getElementById('adminBtn').style.display = 'none';
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
@@ -5627,7 +5772,7 @@ async function onAuthSuccess(user) {
   let isNewUser = false;
   const { data, error } = await sb
     .from('users')
-    .select('balance, stats, dev_password, username, username_set')
+    .select('balance, stats, dev_password, username, username_set, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
 
@@ -5645,6 +5790,10 @@ async function onAuthSuccess(user) {
     }
     currentUser._username = data.username || null;
     currentUser._usernameSet = data.username_set || false;
+    currentUser._bettingDisabled = data.betting_disabled || false;
+    // Check temp dev tools
+    const tempDevUntil = data.temp_dev_until ? new Date(data.temp_dev_until) : null;
+    currentUser._hasTempDev = tempDevUntil && tempDevUntil > new Date();
     // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
@@ -5667,6 +5816,13 @@ async function onAuthSuccess(user) {
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   }
   updateBalance(); updateStatsUI(); updateLevelUI();
+
+  // Dev button only for admins or users with active temp dev grant
+  const isAdmin = ADMIN_IDS.includes(user.id);
+  if (isAdmin || currentUser._hasTempDev) document.getElementById('devBtn').style.display = 'flex';
+  else document.getElementById('devBtn').style.display = 'none';
+  if (isAdmin) document.getElementById('adminBtn').style.display = 'flex';
+
   const displayName = currentUser._username || user.email.split('@')[0];
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
@@ -6113,7 +6269,138 @@ async function checkDailyBonus() {
 
 
 // ════════════════════════════════════════════════════════════
-//  MINI FEED (per-game panel)
+//  ADMIN SYSTEM
+//  Add your Supabase user ID(s) here to grant admin access
+// ════════════════════════════════════════════════════════════
+const ADMIN_IDS = [
+  'f845e238-2678-47ec-9b4f-c6e333bfb763',
+  'b8b04d1d-77c5-41f0-815e-bc60b5247709'
+];
+
+function isAdmin() { return currentUser && ADMIN_IDS.includes(currentUser.id); }
+
+function openAdmin() {
+  if (!isAdmin()) return;
+  document.getElementById('adminOverlay').classList.add('open');
+  // Clear all fields
+  ['adminLookupUser','adminBalUser','adminBalAmount','adminResetUser','adminBanUser','adminDevUser','adminDevHours'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['adminLookupMsg','adminBalMsg','adminResetMsg','adminBanMsg','adminDevMsg'].forEach(id => {
+    const el = document.getElementById(id); if (el) { el.textContent = ''; el.className = 'admin-msg'; }
+  });
+  document.getElementById('adminUserCard').style.display = 'none';
+}
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+document.getElementById('adminOverlay').addEventListener('click', function(e) { if (e.target === this) closeAdmin(); });
+
+// Helper: fetch user row by username
+async function _adminGetUser(username) {
+  const { data, error } = await sb.from('users').select('*').eq('username', username.trim().toLowerCase()).single();
+  if (error || !data) return null;
+  return data;
+}
+
+// Helper: set admin message
+function _adminMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
+}
+
+// LOOK UP USER
+async function adminLookup() {
+  const un = document.getElementById('adminLookupUser').value.trim();
+  if (!un) return _adminMsg('adminLookupMsg', 'Enter a username.', false);
+  _adminMsg('adminLookupMsg', 'Looking up…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminLookupMsg', 'User not found.', false);
+  let st = {};
+  try { st = typeof u.stats === 'string' ? JSON.parse(u.stats) : (u.stats || {}); } catch(e) {}
+  const level = getLevelFromXp(st.xp || 0);
+  const card = document.getElementById('adminUserCard');
+  card.style.display = 'block';
+  document.getElementById('adminCardUsername').textContent = u.username;
+  document.getElementById('adminCardDetail').innerHTML =
+    `Balance: <b>${fmt(u.balance)}</b> · Level <b>${level}</b> · Games: <b>${st.gamesPlayed||0}</b> · Wins: <b>${st.wins||0}</b><br>` +
+    `Betting: <b style="color:${u.betting_disabled?'var(--red)':'var(--green)'}">${u.betting_disabled?'DISABLED':'Enabled'}</b> · ` +
+    `Temp Dev: <b>${u.temp_dev_until && new Date(u.temp_dev_until)>new Date() ? 'Active until '+new Date(u.temp_dev_until).toLocaleString() : 'None'}</b>`;
+  _adminMsg('adminLookupMsg', '', true);
+}
+
+// SET BALANCE
+async function adminSetBalance() {
+  const un = document.getElementById('adminBalUser').value.trim();
+  const amount = parseFloat(document.getElementById('adminBalAmount').value);
+  if (!un) return _adminMsg('adminBalMsg', 'Enter a username.', false);
+  if (isNaN(amount) || amount < 0) return _adminMsg('adminBalMsg', 'Enter a valid amount.', false);
+  const ok = await showConfirm({ icon:'💰', title:'Set Balance?', msg:`Set ${un}'s balance to ${fmt(amount)}?`, yesText:'Confirm' });
+  if (!ok) return;
+  _adminMsg('adminBalMsg', 'Setting…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminBalMsg', 'User not found.', false);
+  const { error } = await sb.from('users').update({ balance: amount }).eq('id', u.id);
+  if (error) return _adminMsg('adminBalMsg', error.message, false);
+  _adminMsg('adminBalMsg', `✓ Set ${un}'s balance to ${fmt(amount)}`, true);
+}
+
+// RESET ACCOUNT
+async function adminResetAccount() {
+  const un = document.getElementById('adminResetUser').value.trim();
+  if (!un) return _adminMsg('adminResetMsg', 'Enter a username.', false);
+  const ok = await showConfirm({ icon:'⚠️', title:'Reset Account?', msg:`This will reset ${un}'s balance to $1,000 and wipe all stats and XP. This cannot be undone.`, yesText:'Reset' });
+  if (!ok) return;
+  _adminMsg('adminResetMsg', 'Resetting…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminResetMsg', 'User not found.', false);
+  const freshStats = DEFAULT_STATS();
+  const { error } = await sb.from('users').update({ balance: 1000, stats: JSON.stringify(freshStats) }).eq('id', u.id);
+  if (error) return _adminMsg('adminResetMsg', error.message, false);
+  _adminMsg('adminResetMsg', `✓ ${un}'s account has been reset.`, true);
+}
+
+// TOGGLE BETTING BAN
+async function adminToggleBan(disable) {
+  const un = document.getElementById('adminBanUser').value.trim();
+  if (!un) return _adminMsg('adminBanMsg', 'Enter a username.', false);
+  if (un.toLowerCase() === currentUser._username?.toLowerCase()) return _adminMsg('adminBanMsg', "You can't ban yourself.", false);
+  const ok = await showConfirm({ icon: disable ? '🚫' : '✅', title: disable ? 'Disable Betting?' : 'Enable Betting?', msg:`${disable ? 'Disable' : 'Enable'} betting for ${un}?`, yesText:'Confirm' });
+  if (!ok) return;
+  _adminMsg('adminBanMsg', 'Updating…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminBanMsg', 'User not found.', false);
+  const { error } = await sb.from('users').update({ betting_disabled: disable }).eq('id', u.id);
+  if (error) return _adminMsg('adminBanMsg', error.message, false);
+  _adminMsg('adminBanMsg', `✓ Betting ${disable ? 'disabled' : 'enabled'} for ${un}.`, true);
+}
+
+// GRANT / REVOKE TEMP DEV TOOLS
+async function adminGrantDev() {
+  const un = document.getElementById('adminDevUser').value.trim();
+  const hours = parseInt(document.getElementById('adminDevHours').value);
+  if (!un) return _adminMsg('adminDevMsg', 'Enter a username.', false);
+  if (!hours || hours < 1) return _adminMsg('adminDevMsg', 'Enter hours (min 1).', false);
+  _adminMsg('adminDevMsg', 'Granting…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminDevMsg', 'User not found.', false);
+  const until = new Date(Date.now() + hours * 36e5).toISOString();
+  const { error } = await sb.from('users').update({ temp_dev_until: until }).eq('id', u.id);
+  if (error) return _adminMsg('adminDevMsg', error.message, false);
+  _adminMsg('adminDevMsg', `✓ Dev tools granted to ${un} for ${hours}h.`, true);
+}
+
+async function adminRevokeDev() {
+  const un = document.getElementById('adminDevUser').value.trim();
+  if (!un) return _adminMsg('adminDevMsg', 'Enter a username.', false);
+  _adminMsg('adminDevMsg', 'Revoking…', true);
+  const u = await _adminGetUser(un);
+  if (!u) return _adminMsg('adminDevMsg', 'User not found.', false);
+  const { error } = await sb.from('users').update({ temp_dev_until: null }).eq('id', u.id);
+  if (error) return _adminMsg('adminDevMsg', error.message, false);
+  _adminMsg('adminDevMsg', `✓ Dev tools revoked from ${un}.`, true);
+}
+
+
 // ════════════════════════════════════════════════════════════
 const _mfTabs = {}; // panel -> 'lucky' | 'highwager'
 const PANELS = ['mines','tower','roulette','blackjack','coinflip','keno','plinko','reme','slots','crash','dice','hilo','wheel'];
