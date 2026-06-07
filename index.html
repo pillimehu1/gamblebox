@@ -1582,7 +1582,7 @@
           <option value="easy">Easy (3 tiles, 1 bomb)</option>
           <option value="medium" selected>Medium (3 tiles, 2 bombs)</option>
           <option value="hard">Hard (2 tiles, 1 bomb)</option>
-          <option value="expert">Expert (2 tiles, 2 bombs... 0 safe?)</option>
+          <option value="expert">Expert (3 tiles, 2 bombs)</option>
         </select>
       </div>
 
@@ -1996,7 +1996,9 @@ function minesStart(){
   minesBombs=positions.slice(0,bombs);
   renderMinesGrid(false);
   document.getElementById('minesStartBtn').disabled=true;
-  document.getElementById('minesCashBtn').disabled=false;
+  document.getElementById('minesCashBtn').disabled=true;
+  document.getElementById('minesBet').disabled=true;
+  document.getElementById('minesCount').disabled=true;
   document.getElementById('minesMult').textContent='1.00×';
   document.getElementById('minesProfit').textContent='$0.00';
   document.getElementById('minesGems').textContent='0';
@@ -2046,10 +2048,13 @@ window.minesClick = function(i) {
     renderMinesGrid(true);
     document.getElementById('minesStartBtn').disabled = false;
     document.getElementById('minesCashBtn').disabled = true;
+    document.getElementById('minesBet').disabled = false;
+    document.getElementById('minesCount').disabled = false;
     toast('💥 BOOM! You hit a mine!', 'lose');
     trackGame('mines', currentMinesBet, 0, false);
   } else {
     minesGemsFound++;
+    if (minesGemsFound === 1) document.getElementById('minesCashBtn').disabled = false;
     const bombs = parseInt(document.getElementById('minesCount').value) || 3;
     const baseMult = minesCalcMult(minesGemsFound, bombs);
     const mult = baseMult * (DEV.minesMult || 1);
@@ -2065,7 +2070,7 @@ window.minesCashout = function() {
   if (!minesActive) return;
   syncDevInputs();
   const bombs = parseInt(document.getElementById('minesCount').value) || 3;
-  const baseMult = minesCalcMult(Math.max(minesGemsFound, 1), bombs);
+  const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
   balance += win; updateBalance();
@@ -2073,6 +2078,8 @@ window.minesCashout = function() {
   renderMinesGrid(true);
   document.getElementById('minesStartBtn').disabled = false;
   document.getElementById('minesCashBtn').disabled = true;
+  document.getElementById('minesBet').disabled = false;
+  document.getElementById('minesCount').disabled = false;
   toast('💰 Cashed out ' + fmt(win) + '!', 'win');
   trackGame('mines', currentMinesBet, win, true);
 };
@@ -2090,7 +2097,7 @@ const TOWER_CONFIGS={
   easy:{cols:3,bombs:1},
   medium:{cols:3,bombs:2},
   hard:{cols:2,bombs:1},
-  expert:{cols:2,bombs:2}
+  expert:{cols:3,bombs:2}
 };
 
 function towerBuildMults(cfg){
@@ -2121,6 +2128,7 @@ function towerStart(){
   document.getElementById('towerStartBtn').disabled=true;
   document.getElementById('towerCashBtn').disabled=false;
   document.getElementById('towerDiff').disabled=true;
+  document.getElementById('towerBet').disabled=true;
   document.getElementById('towerMult').textContent='1.00×';
   renderTower();
 }
@@ -2180,6 +2188,7 @@ window.towerClick = function(f, c) {
     document.getElementById('towerStartBtn').disabled = false;
     document.getElementById('towerCashBtn').disabled = true;
     document.getElementById('towerDiff').disabled = false;
+    document.getElementById('towerBet').disabled = false;
     toast('💥 Hit a bomb! Game over.', 'lose');
     trackGame('tower', currentTowerBet, 0, false);
   } else {
@@ -2236,6 +2245,7 @@ window.towerCashout = function(auto = false) {
   document.getElementById('towerStartBtn').disabled = false;
   document.getElementById('towerCashBtn').disabled = true;
   document.getElementById('towerDiff').disabled = false;
+  document.getElementById('towerBet').disabled = false;
   toast('🏆 Cashed out ' + fmt(win) + '! (' + mult.toFixed(2) + '×)', 'win');
   trackGame('tower', currentTowerBet, win, true);
 };
@@ -2291,6 +2301,7 @@ window.rouletteSpin = function() {
   if(!deductBet(bet)) return;
   rSpinning = true;
   document.getElementById('rouletteSpinBtn').disabled = true;
+  document.getElementById('rouletteBet').disabled = true;
 
   let result;
   const mode = DEV.godMode ? 'win' : DEV.rouletteMode;
@@ -2398,6 +2409,7 @@ window.rouletteSpin = function() {
       });
       rSpinning = false;
       document.getElementById('rouletteSpinBtn').disabled = false;
+      document.getElementById('rouletteBet').disabled = false;
     }
   }, 80);
 };
@@ -2479,6 +2491,7 @@ window.bjDeal = function() {
   syncDevInputs();
   if(!deductBet(bet)) return;
   bjBet = bet;
+  document.getElementById('bjBet').disabled = true;
   bjDeck = bjBuildDeck(); bjPlayer = []; bjDealer = []; bjInGame = true; bjDoubled = false;
   document.getElementById('bjResult').innerHTML = '';
 
@@ -2546,7 +2559,9 @@ window.bjReveal = function() {
   res.innerHTML='<div class="bj-result '+type+'">'+msg+'</div>';
   
   if (payout>0){ balance+=payout; updateBalance(); }
-  bjInGame=false; bjSetControls('deal');
+  bjInGame=false;
+  document.getElementById('bjBet').disabled = false;
+  bjSetControls('deal');
   
   if (type==='win') { toast('🏆 Won '+fmt(payout)+'!','win'); trackGame('blackjack', bjBet, payout, true); }
   else if (type==='lose') { toast('❌ Lost '+fmt(bjBet),'lose'); trackGame('blackjack', bjBet, 0, false); }
@@ -2709,6 +2724,7 @@ function cfReset() {
   cfStreak = 0;
   cfCurrentBet = 0;
   document.getElementById('cfBet').disabled = false;
+  document.getElementById('cfBtn').disabled = false;
   document.getElementById('cfCashoutBtn').style.display = 'none';
   document.getElementById('cfStreakInfo').style.display = 'none';
   document.getElementById('cfLadder').style.display = 'none';
@@ -2775,6 +2791,9 @@ function kenoPlay() {
   syncDevInputs();
   if(!deductBet(bet)) return;
   
+  document.getElementById('kenoBet').disabled = true;
+  document.getElementById('kenoPlayBtn').disabled = true;
+
   let cells = document.querySelectorAll('.keno-cell');
   cells.forEach(c => c.classList.remove('hit', 'miss'));
   
@@ -2821,7 +2840,9 @@ function kenoPlay() {
   
   if(payout > 0) toast(`Matched ${matches}! Won ${fmt(payout)}`, 'win');
   else toast(`Matched ${matches}. Lost ${fmt(bet)}`, 'lose');
-}
+
+  document.getElementById('kenoBet').disabled = false;
+  document.getElementById('kenoPlayBtn').disabled = false;
 
 // ════════════════════════════════════════════════════════════
 //  PLINKO (Animation & Peg Update)
@@ -2880,7 +2901,8 @@ function plinkoDrop() {
   if(!deductBet(bet)) return;
   
   btn.disabled = true;
-  
+  document.getElementById('plinkoBet').disabled = true;
+
   let rows = parseInt(document.getElementById('plinkoRows').value);
   let mults = PLINKO_MULTS[rows] || PLINKO_MULTS[8];
   
@@ -2941,6 +2963,7 @@ function plinkoDrop() {
     else toast(`Hit ${mults[resultIdx]}x.`, 'lose');
     
     btn.disabled = false;
+    document.getElementById('plinkoBet').disabled = false;
   };
 }
 
@@ -3353,9 +3376,13 @@ async function doTip() {
     return;
   }
 
-  // Deduct locally and sync
-  balance -= amount;
-  await saveBalanceToSupabase();
+  // RPC already deducted on server — fetch the real balance back rather than overwriting with stale local
+  const { data: freshData } = await sb.from('users').select('balance').eq('id', currentUser.id).single();
+  if (freshData) {
+    balance = parseFloat(freshData.balance);
+  } else {
+    balance -= amount; // fallback
+  }
   updateBalance();
   msg.textContent = '✓ Sent ' + fmt(amount) + ' to ' + toUsername + '!'; msg.className = 'profile-msg ok';
   document.getElementById('tipUsername').value = '';
@@ -3624,7 +3651,7 @@ document.getElementById('tipLogOverlay').addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════
 async function checkDailyBonus() {
   if (!currentUser) return;
-  const { data } = await sb.from('users').select('last_bonus_at').eq('id', currentUser.id).single();
+  const { data } = await sb.from('users').select('last_bonus_at, balance').eq('id', currentUser.id).single();
   if (!data) return;
   const last = data.last_bonus_at ? new Date(data.last_bonus_at) : null;
   const now = new Date();
@@ -3632,7 +3659,9 @@ async function checkDailyBonus() {
   if (diffHours < 24) return; // Already claimed today
 
   const bonus = 100;
-  balance += bonus;
+  // Use fresh server balance to avoid overwriting with stale local value
+  const freshBalance = parseFloat(data.balance) || balance;
+  balance = freshBalance + bonus;
   await sb.from('users').upsert({ id: currentUser.id, last_bonus_at: now.toISOString(), balance: balance });
   updateBalance();
 
