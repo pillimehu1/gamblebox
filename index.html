@@ -1723,19 +1723,6 @@
     </div>
   </div>
 
-  <!-- Confirm Dialog -->
-  <div class="confirm-overlay" id="confirmOverlay">
-    <div class="confirm-box">
-      <div class="confirm-icon" id="confirmIcon">⚠️</div>
-      <div class="confirm-title" id="confirmTitle">Are you sure?</div>
-      <div class="confirm-msg" id="confirmMsg"></div>
-      <div class="confirm-btns">
-        <button class="confirm-no" onclick="confirmResolve(false)">Cancel</button>
-        <button class="confirm-yes" id="confirmYesBtn" onclick="confirmResolve(true)">Confirm</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ════════════════════ MINES ════════════════════ -->
   <div class="game-panel" id="panel-mines">
     <div class="gcard">
@@ -4076,5 +4063,18 @@ async function checkDailyBonus() {
   });
 })();
 </script>
+<!-- ── CONFIRM DIALOG (body-level so it works on all tabs) ── -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="confirmResolve(false)">Cancel</button>
+      <button class="confirm-yes" id="confirmYesBtn" onclick="confirmResolve(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
