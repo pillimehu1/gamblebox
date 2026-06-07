@@ -3312,7 +3312,8 @@ async function doSendResetEmail() {
 //  Every 10 levels: reward = 200 × (tier^1.6)  where tier = level/10
 // ════════════════════════════════════════════════════════════
 function xpForLevel(n) {
-  return Math.floor(1000 * Math.pow(n, 4));
+  if (n <= 100) return Math.floor(500 * n);
+  return Math.floor(6e30 * Math.pow(n / 1000, 8));
 }
 
 function totalXpForLevel(n) {
@@ -3343,7 +3344,7 @@ function levelReward(level) {
 
 function addXp(wager, multiplier) {
   if (!currentUser) return;
-  const gained = Math.min(Math.floor(wager), 1000000); // cap XP per game at 1M
+  const gained = Math.floor(wager);
   if (gained <= 0) return;
   const oldLevel = getLevelFromXp(stats.xp || 0);
   stats.xp = (stats.xp || 0) + gained;
