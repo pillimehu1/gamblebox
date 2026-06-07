@@ -242,8 +242,8 @@
   .stats-overlay {
     display:none; position:fixed; inset:0;
     background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
-    z-index:300; align-items:center; justify-content:center;
-    padding:20px;
+    z-index:300; align-items:flex-start; justify-content:center;
+    padding:20px; overflow-y:auto;
   }
   .stats-overlay.open { display:flex; }
   .stats-panel {
@@ -253,6 +253,7 @@
     width:min(600px,100%);
     box-shadow:0 0 60px rgba(0,176,255,.15);
     animation:fadeIn .3s ease;
+    margin:auto;
   }
   .stats-title {
     font-family:'Cinzel Decorative',cursive;
@@ -669,13 +670,151 @@
   .divider { height:1px; background:var(--border); margin:16px 0; }
   .history-label { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
 
-  @media(max-width:500px) {
-    .logo { font-size:.9rem; }
-    .balance-amount { font-size:1rem; min-width:70px; }
-    .mines-grid { gap:5px; }
-    .mine-cell { border-radius:7px; font-size:1.1rem; }
-    .hdr-btn-add { padding:0 10px; font-size:.75rem; }
+  /* ══════════════════════════════════════
+     MOBILE — primary breakpoint ≤ 600px
+  ══════════════════════════════════════ */
+  @media(max-width:600px) {
+
+    /* ── Header ── */
+    header { padding:8px 10px 6px; gap:6px; }
+    .logo { font-size:.85rem; letter-spacing:.5px; }
+    .balance-box { padding:4px 10px; border-radius:8px; }
+    .balance-label { display:none; }
+    .balance-amount { font-size:1rem; min-width:0; }
+    .hdr-btn { width:32px; height:32px; font-size:.85rem; }
+    .hdr-btn-add { padding:0 10px; font-size:.75rem; height:32px; }
+    .user-chip { padding:0 8px; height:32px; font-size:.75rem; }
+    .user-chip-name { max-width:70px; }
+
+    /* ── Nav tabs — horizontal scroll strip ── */
+    .nav-tabs {
+      flex-wrap:nowrap; overflow-x:auto; gap:6px;
+      margin-bottom:16px; padding-bottom:4px;
+      scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    }
+    .nav-tabs::-webkit-scrollbar { display:none; }
+    .tab {
+      padding:8px 14px; font-size:.8rem;
+      border-radius:8px; white-space:nowrap; flex-shrink:0;
+    }
+
+    /* ── Main layout ── */
+    main { padding:14px 10px 80px; }
+    .gcard { padding:16px 12px; border-radius:14px; }
+    .gcard-title { font-size:.85rem; margin-bottom:14px; }
+
+    /* ── Bet controls ── */
+    .bet-row { gap:8px; margin-bottom:12px; }
+    .bet-input { width:90px; font-size:1rem; padding:7px 10px; }
+    .bq { padding:6px 10px; font-size:.8rem; min-height:34px; }
+
+    /* ── Buttons ── */
+    .btn-primary, .btn-danger, .btn-secondary {
+      padding:14px; font-size:.95rem; border-radius:10px;
+    }
+    .bj-controls .btn-primary,
+    .bj-controls .btn-secondary { flex:1; padding:12px 6px; font-size:.85rem; width:auto; margin-bottom:0; }
+
+    /* ── Toast ── */
+    #toast { font-size:.9rem; padding:10px 18px; white-space:normal; text-align:center; max-width:88vw; }
+
+    /* ── Mines ── */
+    .mines-grid { gap:5px; margin-bottom:14px; }
+    .mine-cell { border-radius:8px; font-size:1.2rem; }
+    .mines-info { gap:8px; }
+    .mines-stat { padding:8px 12px; flex:1; text-align:center; }
+    .mines-stat-value { font-size:1rem; }
+
+    /* ── Tower ── */
+    .tower-wrap { flex-direction:column; gap:12px; }
+    .tower-grid { min-width:unset; width:100%; }
+    .tower-info { min-width:unset; display:flex; align-items:center; gap:16px; justify-content:center; }
+    .tower-mult { font-size:1.8rem; margin-bottom:0; }
+    .tower-mult-label { margin-bottom:0; }
+    .tower-cell { padding:12px 0; font-size:1.1rem; }
+
+    /* ── Roulette ── */
+    .roulette-display { width:110px; height:110px; font-size:2.2rem; }
+    .roulette-bets { gap:6px; }
+    .r-bet-btn { min-width:60px; padding:10px 4px; font-size:.8rem; }
+    .rn-cell { width:30px; height:28px; font-size:.72rem; }
+    .roulette-numbers-strip { gap:3px; }
+    .rh-item { width:28px; height:28px; font-size:.7rem; }
+
+    /* ── Blackjack ── */
+    .bj-table { padding:16px 12px; min-height:220px; }
+    .bj-card { width:46px; height:66px; font-size:.9rem; }
+    .bj-card-val { font-size:.85rem; }
+    .bj-card-suit { font-size:.75rem; }
+    .bj-result { font-size:1.1rem; padding:10px 0; }
+    .bj-controls { gap:8px; }
+
+    /* ── Coinflip ── */
+    .cf-coin { width:90px; height:90px; font-size:2.2rem; margin:14px auto; }
+    .cf-btn { padding:12px 8px; font-size:.85rem; }
+    .cf-mode-btn { padding:8px; font-size:.8rem; }
+    .cf-ladder-row { padding:5px 10px; font-size:.8rem; }
+
+    /* ── Keno ── */
+    .keno-grid { grid-template-columns:repeat(5,1fr); gap:5px; }
+    .keno-cell { padding:8px 0; font-size:.85rem; }
+    .kp-box { min-width:36px; padding:5px 2px; }
+    .kp-multi { font-size:.75rem; }
+    .kp-hits { font-size:.6rem; }
+
+    /* ── Plinko ── */
+    .plinko-board { padding:20px 6px; max-width:100%; }
+    .plinko-bucket { font-size:.55rem; padding:6px 1px; }
+
+    /* ── Lobby ── */
+    .lobby-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+    .lobby-card-img { height:80px; font-size:2.8rem; }
+    .lobby-card-body { padding:10px 12px; }
+    .lobby-card-name { font-size:.75rem; }
+    .lobby-card-desc { font-size:.72rem; }
+
+    /* ── Stats overlay ── */
+    .stats-overlay { align-items:flex-start; overflow-y:auto; padding:16px 10px 40px; }
+    .stats-panel { padding:20px 16px; border-radius:16px; }
+    .stats-grid { grid-template-columns:1fr 1fr; gap:8px; }
+    .stat-val { font-size:1.1rem; }
+
+    /* ── Profile overlay ── */
+    .profile-panel-body { padding:16px 16px 24px; }
+    .profile-stats-row { grid-template-columns:1fr 1fr; gap:8px; }
+
+    /* ── Leaderboard ── */
+    .lb-row { padding:10px 12px; gap:8px; }
+    .lb-avatar { width:32px; height:32px; font-size:.9rem; }
+    .lb-val { font-size:.95rem; }
+
+    /* ── Dev panel ── */
+    .dev-panel { padding:20px 16px; }
+    .dev-label { min-width:100px; font-size:.75rem; }
+
+    /* ── Auth panel ── */
+    .auth-panel { padding:28px 20px; }
+    .auth-logo { font-size:1.3rem; }
+
+    /* ── Add funds modal ── */
+    .modal { padding:24px 16px; }
+    .modal-presets { gap:6px; }
+    .modal-preset { padding:8px 4px; font-size:.8rem; min-width:50px; }
   }
+
+  /* ── Very small phones ≤ 380px ── */
+  @media(max-width:380px) {
+    .logo { font-size:.75rem; }
+    .hdr-btn { width:28px; height:28px; font-size:.75rem; }
+    .hdr-btn-add { font-size:.7rem; padding:0 8px; height:28px; }
+    .keno-grid { grid-template-columns:repeat(5,1fr); gap:4px; }
+    .keno-cell { font-size:.75rem; padding:7px 0; }
+    .rn-cell { width:26px; height:24px; font-size:.65rem; }
+    .mines-grid { gap:4px; }
+    .mine-cell { font-size:1rem; }
+    .lobby-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+  }
+
 
   /* ── AUTH OVERLAY ── */
   .auth-overlay {
@@ -1007,6 +1146,13 @@
       </div>
       <button class="auth-submit" id="loginBtn" onclick="doLogin()">Sign In</button>
       <div class="auth-error" id="loginError"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:.75rem;color:var(--muted)">or</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button class="auth-submit" onclick="doGuestLogin()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);box-shadow:none;">🎲 Play as Guest</button>
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:8px;">$1,000 starting balance · not saved on refresh</div>
     </div>
 
     <!-- SIGNUP FORM -->
@@ -1144,20 +1290,31 @@
       </div>
 
       <!-- TIP SECTION -->
-      <div class="profile-section-title" style="margin-top:8px;">💸 Tip a Player</div>
-      <input type="text" class="profile-input" id="tipUsername" placeholder="Username to tip (case-insensitive)">
-      <input type="number" class="profile-input" id="tipAmount" placeholder="Amount" min="1">
-      <button class="profile-btn" onclick="doTip()" style="margin-bottom:0;background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.3);color:var(--green);">Send Tip 💸</button>
-      <div class="profile-msg" id="tipMsg"></div>
+      <div id="profileTipSection">
+        <div class="profile-section-title" style="margin-top:8px;">💸 Tip a Player</div>
+        <input type="text" class="profile-input" id="tipUsername" placeholder="Username to tip (case-insensitive)">
+        <input type="number" class="profile-input" id="tipAmount" placeholder="Amount" min="1">
+        <button class="profile-btn" onclick="doTip()" style="margin-bottom:0;background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.3);color:var(--green);">Send Tip 💸</button>
+        <div class="profile-msg" id="tipMsg"></div>
+      </div>
 
       <!-- PASSWORD SECTION -->
-      <div class="profile-section-title" style="margin-top:20px;">🔑 Change Password</div>
-      <input type="password" class="profile-input" id="profileCurrentPw" placeholder="Current password">
-      <input type="password" class="profile-input" id="profileNewPw" placeholder="New password (min 6 chars)">
-      <input type="password" class="profile-input" id="profileConfirmPw" placeholder="Confirm new password">
-      <button class="profile-btn" onclick="doChangePassword()" style="margin-bottom:6px;">Update Password</button>
-      <button class="profile-btn" onclick="doSendResetEmail()" style="margin-bottom:0;background:rgba(0,176,255,.08);border-color:rgba(0,176,255,.3);color:var(--blue);">📧 Send Reset Link to Email</button>
-      <div class="profile-msg" id="profilePwMsg"></div>
+      <div id="profilePwSection">
+        <div class="profile-section-title" style="margin-top:20px;">🔑 Change Password</div>
+        <input type="password" class="profile-input" id="profileCurrentPw" placeholder="Current password">
+        <input type="password" class="profile-input" id="profileNewPw" placeholder="New password (min 6 chars)">
+        <input type="password" class="profile-input" id="profileConfirmPw" placeholder="Confirm new password">
+        <button class="profile-btn" onclick="doChangePassword()" style="margin-bottom:6px;">Update Password</button>
+        <button class="profile-btn" onclick="doSendResetEmail()" style="margin-bottom:0;background:rgba(0,176,255,.08);border-color:rgba(0,176,255,.3);color:var(--blue);">📧 Send Reset Link to Email</button>
+        <div class="profile-msg" id="profilePwMsg"></div>
+      </div>
+
+      <!-- GUEST BANNER -->
+      <div id="profileGuestBanner" style="display:none;margin-top:16px;background:rgba(240,192,64,.07);border:1px solid rgba(240,192,64,.2);border-radius:12px;padding:14px 16px;text-align:center;">
+        <div style="font-size:.85rem;color:var(--gold);font-weight:700;margin-bottom:6px;">🎲 Playing as Guest</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:12px;">Your balance is not saved. Create an account to keep your progress.</div>
+        <button class="auth-submit" onclick="closeProfile();document.getElementById('authOverlay').classList.remove('hidden');switchAuthTab('signup')" style="padding:10px;font-size:.85rem;">Create Account</button>
+      </div>
 
       <!-- ACCOUNT SECTION -->
       <div class="profile-section-title" style="margin-top:20px;">⚠️ Account</div>
@@ -3213,9 +3370,37 @@ async function doSignup() {
   }
 }
 
+// ── GUEST LOGIN ──
+let isGuest = false;
+
+function doGuestLogin() {
+  isGuest = true;
+  currentUser = { _username: null, _usernameSet: false, email: 'guest', _isGuest: true };
+  balance = 1000;
+  stats = DEFAULT_STATS();
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('rcLoadingScreen').style.display = 'none';
+  document.getElementById('userChip').style.display = 'flex';
+  document.getElementById('userChipLabel').textContent = '🎲 Guest';
+  updateBalance();
+  updateStatsUI();
+  updateLevelUI();
+  toast('🎲 Playing as Guest — good luck!', 'win');
+}
+
 // ── SIGN OUT ──
 async function doLogout() {
   closeProfile();
+  if (isGuest) {
+    isGuest = false;
+    currentUser = null;
+    balance = 0;
+    stats = DEFAULT_STATS();
+    document.getElementById('userChip').style.display = 'none';
+    document.getElementById('authOverlay').classList.remove('hidden');
+    document.getElementById('loginError').textContent = '';
+    return;
+  }
   await saveBalanceToSupabase();
   await sb.auth.signOut();
   currentUser = null;
@@ -3284,7 +3469,7 @@ async function onAuthSuccess(user) {
 
 // ── SAVE TO SUPABASE ──
 async function saveBalanceToSupabase() {
-  if (!currentUser) return;
+  if (!currentUser || isGuest) return;
   await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
 }
 
@@ -3299,34 +3484,44 @@ updateBalance = function() {
 // ── PROFILE PANEL ──
 function openProfile() {
   if (!currentUser) return;
-  const email = currentUser.email;
+  const isGuestUser = currentUser._isGuest;
+  const email = isGuestUser ? null : currentUser.email;
   const username = currentUser._username;
-  document.getElementById('profileAvatar').textContent = (username || email)[0].toUpperCase();
-  document.getElementById('profileName').textContent = username || email.split('@')[0];
-  document.getElementById('profileEmailDisplay').textContent = email;
+  document.getElementById('profileAvatar').textContent = isGuestUser ? '🎲' : (username || email)[0].toUpperCase();
+  document.getElementById('profileName').textContent = isGuestUser ? 'Guest' : (username || email.split('@')[0]);
+  document.getElementById('profileEmailDisplay').textContent = isGuestUser ? 'Guest session — not saved' : email;
   document.getElementById('profileBalance').textContent = fmt(balance);
   document.getElementById('profileGames').textContent = stats.gamesPlayed;
   document.getElementById('profileWins').textContent = stats.wins;
   const profitEl = document.getElementById('profileProfit');
   profitEl.textContent = (stats.netProfit >= 0 ? '+' : '') + fmt(stats.netProfit);
   profitEl.style.color = stats.netProfit >= 0 ? 'var(--green)' : 'var(--red)';
-  // Username section
-  if (username) {
-    document.getElementById('profileUsernameDisplay').style.display = 'block';
-    document.getElementById('profileUsernameValue').textContent = username;
-    document.getElementById('profileUsernameEdit').style.display = 'none';
-  } else {
-    document.getElementById('profileUsernameDisplay').style.display = 'none';
-    document.getElementById('profileUsernameEdit').style.display = 'block';
+
+  // Show/hide guest-only vs account-only sections
+  document.getElementById('profileTipSection').style.display = isGuestUser ? 'none' : 'block';
+  document.getElementById('profilePwSection').style.display = isGuestUser ? 'none' : 'block';
+  document.getElementById('profileGuestBanner').style.display = isGuestUser ? 'block' : 'none';
+  document.getElementById('profileUsernameSection').style.display = isGuestUser ? 'none' : 'block';
+
+  if (!isGuestUser) {
+    // Username section
+    if (username) {
+      document.getElementById('profileUsernameDisplay').style.display = 'block';
+      document.getElementById('profileUsernameValue').textContent = username;
+      document.getElementById('profileUsernameEdit').style.display = 'none';
+    } else {
+      document.getElementById('profileUsernameDisplay').style.display = 'none';
+      document.getElementById('profileUsernameEdit').style.display = 'block';
+    }
+    document.getElementById('profileCurrentPw').value = '';
+    document.getElementById('profileNewPw').value = '';
+    document.getElementById('profileConfirmPw').value = '';
+    document.getElementById('profilePwMsg').textContent = '';
+    document.getElementById('tipUsername').value = '';
+    document.getElementById('tipAmount').value = '';
+    document.getElementById('tipMsg').textContent = '';
+    document.getElementById('profileUsernameMsg').textContent = '';
   }
-  document.getElementById('profileCurrentPw').value = '';
-  document.getElementById('profileNewPw').value = '';
-  document.getElementById('profileConfirmPw').value = '';
-  document.getElementById('profilePwMsg').textContent = '';
-  document.getElementById('tipUsername').value = '';
-  document.getElementById('tipAmount').value = '';
-  document.getElementById('tipMsg').textContent = '';
-  document.getElementById('profileUsernameMsg').textContent = '';
   document.getElementById('profileOverlay').classList.add('open');
 }
 
@@ -3649,7 +3844,7 @@ document.getElementById('tipLogOverlay').addEventListener('click', function(e) {
 //  DAILY LOGIN BONUS
 // ════════════════════════════════════════════════════════════
 async function checkDailyBonus() {
-  if (!currentUser) return;
+  if (!currentUser || isGuest) return;
   const { data } = await sb.from('users').select('last_bonus_at, balance').eq('id', currentUser.id).single();
   if (!data) return;
   const last = data.last_bonus_at ? new Date(data.last_bonus_at) : null;
