@@ -2307,36 +2307,24 @@ window.minesClick = function(i) {
   }
 };
 
-window.minesCashout = function() {
+window.minesCashout = async function() {
   if (!minesActive) return;
   syncDevInputs();
   const bombs = parseInt(document.getElementById('minesCount').value) || 3;
   const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
-  const btn = document.getElementById('minesCashBtn');
-  // Simple double-confirm via button text
-  if (btn._confirmPending) {
-    clearTimeout(btn._confirmTimer);
-    btn._confirmPending = false;
-    btn.textContent = 'Cash Out';
-    balance += win; updateBalance();
-    minesActive = false;
-    renderMinesGrid(true);
-    document.getElementById('minesStartBtn').disabled = false;
-    document.getElementById('minesCashBtn').disabled = true;
-    document.getElementById('minesBet').disabled = false;
-    document.getElementById('minesCount').disabled = false;
-    toast('💰 Cashed out ' + fmt(win) + '!', 'win');
-    trackGame('mines', currentMinesBet, win, true);
-  } else {
-    btn._confirmPending = true;
-    btn.textContent = '✓ Confirm (' + fmt(win) + ')';
-    btn._confirmTimer = setTimeout(() => {
-      btn._confirmPending = false;
-      btn.textContent = 'Cash Out';
-    }, 3000);
-  }
+  const ok = await showConfirm({ icon:'💰', title:'Cash Out?', msg:`Cash out now for ${fmt(win)}? (${mult.toFixed(2)}× on ${minesGemsFound} gem${minesGemsFound !== 1 ? 's' : ''})`, yesText:'Cash Out' });
+  if (!ok) return;
+  balance += win; updateBalance();
+  minesActive = false;
+  renderMinesGrid(true);
+  document.getElementById('minesStartBtn').disabled = false;
+  document.getElementById('minesCashBtn').disabled = true;
+  document.getElementById('minesBet').disabled = false;
+  document.getElementById('minesCount').disabled = false;
+  toast('💰 Cashed out ' + fmt(win) + '!', 'win');
+  trackGame('mines', currentMinesBet, win, true);
 };
 
 renderMinesGrid(false);
@@ -3540,10 +3528,13 @@ async function doSignup() {
   const sucEl = document.getElementById('signupSuccess');
   const btn = document.getElementById('signupBtn');
   errEl.textContent = ''; sucEl.textContent = '';
-  if (!username) { errEl.textContent = 'Please choose a username.'; return; }
-  if (username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
-  if (!/^[a-zA-Z0-9_]+$/.test(username)) { errEl.textContent = 'Username can only contain letters, numbers and underscores.'; return; }
-  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  const usernameTrimmed = username.trim();
+  if (!usernameTrimmed) { errEl.textContent = 'Please choose a username.'; return; }
+  if (usernameTrimmed.length < 3 || usernameTrimmed.length > 20) { errEl.textContent = 'Username must be 3–20 characters.'; return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(usernameTrimmed)) { errEl.textContent = 'Username can only contain letters, numbers and underscores.'; return; }
+  if (/^_|_$/.test(usernameTrimmed)) { errEl.textContent = 'Username cannot start or end with an underscore.'; return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email address.'; return; }
+  if (!password) { errEl.textContent = 'Please enter a password.'; return; }
   if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
   // Check username not taken
   btn.disabled = true; btn.textContent = 'Checking username…';
@@ -3744,9 +3735,10 @@ async function doTip() {
   const amount = Math.floor(parseFloat(rawAmount));
   const msg = document.getElementById('tipMsg');
   msg.textContent = ''; msg.className = 'profile-msg';
-  if (!toUsername || toUsername.length < 3) { msg.textContent = 'Enter a valid username (3+ chars, letters/numbers/underscores).'; msg.className = 'profile-msg err'; return; }
-  if (!amount || amount < 1) { msg.textContent = 'Enter a valid whole number amount (min 1).'; msg.className = 'profile-msg err'; return; }
+  if (!toUsername || toUsername.length < 3 || toUsername.length > 20) { msg.textContent = 'Enter a valid username (3–20 chars, letters/numbers/underscores).'; msg.className = 'profile-msg err'; return; }
+  if (!rawAmount || isNaN(parseFloat(rawAmount)) || amount < 1) { msg.textContent = 'Enter a valid whole number amount (min 1).'; msg.className = 'profile-msg err'; return; }
   if (amount > balance) { msg.textContent = 'Not enough balance.'; msg.className = 'profile-msg err'; return; }
+  if (amount > 1000000) { msg.textContent = 'Max tip is $1,000,000 at a time.'; msg.className = 'profile-msg err'; return; }
   if (toUsername === currentUser._username?.toLowerCase()) { msg.textContent = "You can't tip yourself!"; msg.className = 'profile-msg err'; return; }
   const ok = await showConfirm({ icon:'💸', title:'Send Tip?', msg:`Send ${fmt(amount)} to ${toUsername}?`, yesText:'Send Tip' });
   if (!ok) return;
@@ -3935,30 +3927,20 @@ async function loadLb(tab) {
   });
   document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">Loading…</div>';
 
-  const { data, error } = await sb.from('users').select('username, balance, stats').not('username', 'is', null).limit(500);
+  const { data, error } = await sb.rpc('get_leaderboard', { sort_by: tab });
   if (error || !data) {
     document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load. <span style="cursor:pointer;color:var(--blue);text-decoration:underline;" onclick="loadLb(lbCurrentTab)">Retry</span></div>';
     return;
   }
 
-  let rows = data.map(u => {
-    let st = {};
-    try { st = typeof u.stats === 'string' ? JSON.parse(u.stats) : (u.stats || {}); } catch(e) {}
-    const xp = st.xp || 0;
-    return {
-      username: u.username,
-      balance: parseFloat(u.balance) || 0,
-      wagered: st.totalWagered || 0,
-      wins: st.wins || 0,
-      level: getLevelFromXp(xp),
-      xp
-    };
-  });
-
-  if (tab === 'balance') rows.sort((a,b) => b.balance - a.balance);
-  else if (tab === 'wagered') rows.sort((a,b) => b.wagered - a.wagered);
-  else if (tab === 'wins') rows.sort((a,b) => b.wins - a.wins);
-  else rows.sort((a,b) => b.level - a.level || b.xp - a.xp);
+  let rows = data.map(u => ({
+    username: u.username,
+    balance: parseFloat(u.balance) || 0,
+    wagered: u.wagered || 0,
+    wins: u.wins || 0,
+    level: u.level || 1,
+    xp: u.xp || 0
+  }));
 
   const myUsername = currentUser?._username;
   // Find my rank
