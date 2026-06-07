@@ -6,7 +6,6 @@
   <title>🎰 Royal Casino v70</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
 <style>
   :root {
     --gold: #f0c040;
@@ -1114,7 +1113,50 @@
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   }
   .rc-loading-sub { font-size:.8rem; color:var(--muted); }
+
+  /* ── RECENT WINS FEED ── */
+  .wins-feed { display:flex; flex-direction:column; gap:8px; }
+  .wf-item {
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.05);
+    border-radius:10px; padding:10px 14px;
+    animation:fadeIn .4s ease;
+  }
+  .wf-game { font-size:1.1rem; flex-shrink:0; }
+  .wf-info { flex:1; min-width:0; }
+  .wf-user { font-size:.85rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wf-detail { font-size:.72rem; color:var(--muted); }
+  .wf-amt { font-size:.95rem; font-weight:700; color:var(--green); white-space:nowrap; }
+  .wf-empty { text-align:center; color:var(--muted); font-size:.85rem; padding:20px 0; }
+
+  /* ── CONFIRM DIALOG ── */
+  .confirm-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.7); backdrop-filter:blur(6px);
+    z-index:500; align-items:center; justify-content:center;
+  }
+  .confirm-overlay.open { display:flex; }
+  .confirm-box {
+    background:#0e0e1a; border:1px solid var(--border);
+    border-radius:16px; padding:28px 24px; width:min(340px,92%);
+    text-align:center; animation:fadeIn .2s ease;
+  }
+  .confirm-icon { font-size:2rem; margin-bottom:10px; }
+  .confirm-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .confirm-msg { font-size:.82rem; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+  .confirm-btns { display:flex; gap:10px; }
+  .confirm-yes {
+    flex:1; background:linear-gradient(135deg,#f0c040,#f0a000);
+    color:#000; font-family:'Rajdhani',sans-serif; font-weight:700;
+    border:none; border-radius:8px; padding:11px; cursor:pointer;
+  }
+  .confirm-no {
+    flex:1; background:var(--card2); border:1px solid var(--border);
+    color:var(--text); font-family:'Rajdhani',sans-serif; font-weight:700;
+    border-radius:8px; padding:11px; cursor:pointer;
+  }
 </style>
+</head>
 
 <!-- ── LOADING SCREEN (shown until Supabase session resolves) ── -->
 <div id="rcLoadingScreen">
@@ -1671,6 +1713,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Recent Big Wins Feed -->
+    <div class="gcard" style="margin-top:0;">
+      <div class="gcard-title" style="margin-bottom:12px;">🔥 Recent Big Wins</div>
+      <div class="wins-feed" id="winsFeed">
+        <div class="wf-empty">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <div class="confirm-icon" id="confirmIcon">⚠️</div>
+      <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+      <div class="confirm-msg" id="confirmMsg"></div>
+      <div class="confirm-btns">
+        <button class="confirm-no" onclick="confirmResolve(false)">Cancel</button>
+        <button class="confirm-yes" id="confirmYesBtn" onclick="confirmResolve(true)">Confirm</button>
+      </div>
+    </div>
   </div>
 
   <!-- ════════════════════ MINES ════════════════════ -->
@@ -2053,7 +2116,9 @@ function trackGame(gameType, bet, payout, isWin) {
 
 function openStats() { document.getElementById('statsOverlay').classList.add('open'); updateStatsUI(); }
 function closeStats() { document.getElementById('statsOverlay').classList.remove('open'); }
-function resetStats() {
+async function resetStats() {
+  const ok = await showConfirm({ icon:'📊', title:'Reset All Stats?', msg:'This will wipe your game history, wins, wagered totals and XP progress. This cannot be undone.', yesText:'Reset', yesDanger:true });
+  if (!ok) return;
   stats = { 
     gamesPlayed: 0, wins: 0, netProfit: 0, totalWagered: 0, globalAth: 0, globalAtl: 0,
     games: {
@@ -2115,8 +2180,25 @@ function toast(msg,type=''){
 
 // ── BET HELPERS ──
 function halfBet(id){ const el=document.getElementById(id); el.value=Math.max(1,Math.floor(parseFloat(el.value||1)/2)); }
-function doubleBet(id){ const el=document.getElementById(id); el.value=Math.min(balance,parseFloat(el.value||1)*2); }
-function maxBet(id){ document.getElementById(id).value=Math.floor(balance); }
+function doubleBet(id){ const el=document.getElementById(id); el.value=Math.min(Math.floor(balance),Math.floor(parseFloat(el.value||1)*2)); }
+function maxBet(id){ document.getElementById(id).value=Math.max(1,Math.floor(balance)); }
+
+// Clamp bet inputs so you can't type negative/zero/over-balance manually
+function clampBetInput(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let v = parseFloat(el.value);
+  if (isNaN(v) || v < 1) el.value = 1;
+  else if (v > balance && !devInfiniteBalance) el.value = Math.floor(balance);
+  else el.value = Math.floor(v);
+}
+// Attach clamp to all bet inputs on input event
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.bet-input[type="number"]').forEach(el => {
+    el.addEventListener('blur', () => clampBetInput(el.id));
+  });
+});
+
 function deductBet(amount) {
   if (devInfiniteBalance) { balance = 999999999; updateBalance(); return true; }
   if (amount > balance) return false;
@@ -2223,13 +2305,15 @@ window.minesClick = function(i) {
   }
 };
 
-window.minesCashout = function() {
+window.minesCashout = async function() {
   if (!minesActive) return;
   syncDevInputs();
   const bombs = parseInt(document.getElementById('minesCount').value) || 3;
   const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
+  const ok = await showConfirm({ icon:'💰', title:'Cash Out?', msg:`Lock in ${fmt(win)} (${mult.toFixed(2)}×)?`, yesText:'Cash Out' });
+  if (!ok) return;
   balance += win; updateBalance();
   minesActive = false;
   renderMinesGrid(true);
@@ -2390,12 +2474,16 @@ function renderTowerReveal(bombFloor){
   }
 }
 
-window.towerCashout = function(auto = false) {
+window.towerCashout = async function(auto = false) {
   if (!towerActive && !auto) return;
   syncDevInputs();
   const baseMult = towerMults[towerFloor - 1] || 1;
   const mult = baseMult * (DEV.towerMult || 1);
   const win = currentTowerBet * mult;
+  if (!auto) {
+    const ok = await showConfirm({ icon:'🏆', title:'Cash Out?', msg:`Lock in ${fmt(win)} (${mult.toFixed(2)}×)?`, yesText:'Cash Out' });
+    if (!ok) return;
+  }
   balance += win; updateBalance();
   towerActive = false;
   renderTower();
@@ -2865,11 +2953,13 @@ function cfFlip() {
   }, 800);
 }
 
-function cfCashout() {
+async function cfCashout() {
   if (!cfActive || cfStreak === 0) return;
   const mults = cfMode === 'streak' ? CF_STREAK_MULTS : CF_NORMAL_MULTS;
   const mult = mults[cfStreak - 1] || mults[mults.length - 1];
   const payout = cfCurrentBet * mult;
+  const ok = await showConfirm({ icon:'🪙', title:'Cash Out?', msg:`Lock in ${fmt(payout)} (${mult.toFixed(2)}× · ${cfStreak} streak)?`, yesText:'Cash Out' });
+  if (!ok) return;
   balance += payout; updateBalance();
   trackGame('coinflip', cfCurrentBet, payout, true);
   toast(`Cashed out ${fmt(payout)}! (${mult.toFixed(2)}×)`, 'win');
@@ -3305,6 +3395,84 @@ document.getElementById('devPwInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') devUnlock();
 });
 
+// ════════════════════════════════════════════════════════════
+//  CONFIRM DIALOG SYSTEM
+// ════════════════════════════════════════════════════════════
+let _confirmResolve = null;
+
+function showConfirm({ icon = '⚠️', title = 'Are you sure?', msg = '', yesText = 'Confirm', yesDanger = false } = {}) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirmIcon').textContent = icon;
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    const yesBtn = document.getElementById('confirmYesBtn');
+    yesBtn.textContent = yesText;
+    yesBtn.style.background = yesDanger
+      ? 'linear-gradient(135deg,#ff1744,#c0002a)'
+      : 'linear-gradient(135deg,#f0c040,#f0a000)';
+    yesBtn.style.color = yesDanger ? '#fff' : '#000';
+    document.getElementById('confirmOverlay').classList.add('open');
+  });
+}
+
+function confirmResolve(result) {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
+
+// ════════════════════════════════════════════════════════════
+//  RECENT WINS FEED
+// ════════════════════════════════════════════════════════════
+const GAME_ICONS = {
+  mines: '💣', tower: '🗼', roulette: '🎡',
+  blackjack: '🃏', coinflip: '🪙', keno: '🔢', plinko: '🔽'
+};
+
+const _localWins = [];
+
+function pushWinToFeed(gameType, username, bet, payout) {
+  if (payout < bet * 2) return; // Only notable wins (2x+)
+  _localWins.unshift({ gameType, username, bet, payout, ts: Date.now() });
+  if (_localWins.length > 20) _localWins.pop();
+  renderWinsFeed();
+}
+
+function renderWinsFeed() {
+  const feed = document.getElementById('winsFeed');
+  if (!feed) return;
+  if (!_localWins.length) {
+    feed.innerHTML = '<div class="wf-empty">No big wins yet this session. Be the first! 🏆</div>';
+    return;
+  }
+  feed.innerHTML = _localWins.slice(0, 8).map(w => `
+    <div class="wf-item">
+      <div class="wf-game">${GAME_ICONS[w.gameType] || '🎰'}</div>
+      <div class="wf-info">
+        <div class="wf-user">${w.username}</div>
+        <div class="wf-detail">${w.gameType.charAt(0).toUpperCase()+w.gameType.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier</div>
+      </div>
+      <div class="wf-amt">+${fmt(w.payout - w.bet)}</div>
+    </div>
+  `).join('');
+}
+
+// Patch trackGame to also push to feed
+const _origTrackGame = trackGame;
+trackGame = function(gameType, bet, payout, isWin) {
+  _origTrackGame(gameType, bet, payout, isWin);
+  if (isWin && payout >= bet * 2) {
+    const username = (typeof currentUser !== 'undefined' && currentUser?._username)
+      ? currentUser._username
+      : (typeof currentUser !== 'undefined' && currentUser?.email)
+        ? currentUser.email.split('@')[0]
+        : 'Guest';
+    pushWinToFeed(gameType, username, bet, payout);
+  }
+};
+
+renderWinsFeed();
+
 </script>
 <script>
 // ════════════════════════════════════════════════════════════
@@ -3390,6 +3558,8 @@ function doGuestLogin() {
 
 // ── SIGN OUT ──
 async function doLogout() {
+  const ok = await showConfirm({ icon:'👋', title:'Sign Out?', msg:'Your balance is saved and will be here when you come back.', yesText:'Sign Out' });
+  if (!ok) return;
   closeProfile();
   if (isGuest) {
     isGuest = false;
@@ -3523,6 +3693,7 @@ function openProfile() {
     document.getElementById('profileUsernameMsg').textContent = '';
   }
   document.getElementById('profileOverlay').classList.add('open');
+  updateLevelUI();
 }
 
 async function doSetUsername() {
@@ -3543,14 +3714,17 @@ async function doSetUsername() {
 }
 
 async function doTip() {
-  const toUsername = document.getElementById('tipUsername').value.trim().toLowerCase();
-  const amount = parseFloat(document.getElementById('tipAmount').value);
+  const toUsername = document.getElementById('tipUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const rawAmount = document.getElementById('tipAmount').value.trim();
+  const amount = Math.floor(parseFloat(rawAmount));
   const msg = document.getElementById('tipMsg');
   msg.textContent = ''; msg.className = 'profile-msg';
-  if (!toUsername) { msg.textContent = 'Enter a username.'; msg.className = 'profile-msg err'; return; }
-  if (!amount || amount <= 0) { msg.textContent = 'Enter a valid amount.'; msg.className = 'profile-msg err'; return; }
+  if (!toUsername || toUsername.length < 3) { msg.textContent = 'Enter a valid username (3+ chars, letters/numbers/underscores).'; msg.className = 'profile-msg err'; return; }
+  if (!amount || amount < 1) { msg.textContent = 'Enter a valid whole number amount (min 1).'; msg.className = 'profile-msg err'; return; }
   if (amount > balance) { msg.textContent = 'Not enough balance.'; msg.className = 'profile-msg err'; return; }
-  if (toUsername === currentUser._username) { msg.textContent = "You can't tip yourself!"; msg.className = 'profile-msg err'; return; }
+  if (toUsername === currentUser._username?.toLowerCase()) { msg.textContent = "You can't tip yourself!"; msg.className = 'profile-msg err'; return; }
+  const ok = await showConfirm({ icon:'💸', title:'Send Tip?', msg:`Send ${fmt(amount)} to ${toUsername}?`, yesText:'Send Tip' });
+  if (!ok) return;
   msg.textContent = 'Sending…'; msg.className = 'profile-msg';
 
   // Use secure server-side function to bypass RLS
@@ -3737,7 +3911,10 @@ async function loadLb(tab) {
   document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">Loading…</div>';
 
   const { data, error } = await sb.from('users').select('username, balance, stats').not('username', 'is', null).limit(500);
-  if (error || !data) { document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load.</div>'; return; }
+  if (error || !data) {
+    document.getElementById('lbList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load. <span style="cursor:pointer;color:var(--blue);text-decoration:underline;" onclick="loadLb(lbCurrentTab)">Retry</span></div>';
+    return;
+  }
 
   let rows = data.map(u => {
     let st = {};
@@ -3812,7 +3989,10 @@ function closeTipLog() { document.getElementById('tipLogOverlay').classList.remo
 async function loadTipLog() {
   document.getElementById('tipLogList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">Loading…</div>';
   const { data, error } = await sb.from('tip_log').select('*').order('created_at', { ascending: false }).limit(30);
-  if (error || !data) { document.getElementById('tipLogList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load.</div>'; return; }
+  if (error || !data) {
+    document.getElementById('tipLogList').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;">Failed to load. <span style="cursor:pointer;color:var(--blue);text-decoration:underline;" onclick="loadTipLog()">Retry</span></div>';
+    return;
+  }
   if (!data.length) { document.getElementById('tipLogList').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">No tips yet. Be the first!</div>'; return; }
 
   const html = data.map(t => {
@@ -3867,12 +4047,6 @@ async function checkDailyBonus() {
   setTimeout(() => el.remove(), 4000);
 }
 
-// ── Update openProfile to show level ──
-const _origOpenProfile = openProfile;
-openProfile = function() {
-  _origOpenProfile();
-  updateLevelUI();
-};
 
 (async () => {
   // Show loading screen while we check for existing session
