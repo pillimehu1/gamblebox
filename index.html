@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎰 Royal Casino v70</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎰 Royal Casino v70</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --gold: #f0c040;
@@ -1874,6 +1874,14 @@ document.getElementById('statsOverlay').addEventListener('click', function(e){ i
 function updateBalance(){ 
   document.getElementById('balanceDisplay').textContent=fmt(balance); 
   saveState();
+  if (window._lastXpGain) {
+    const { wager, multiplier } = window._lastXpGain;
+    window._lastXpGain = null;
+    addXp(wager, multiplier);
+  } else {
+    updateLevelUI();
+  }
+  saveBalanceToSupabase();
 }
 
 // Initial setup
@@ -3154,21 +3162,6 @@ async function saveBalanceToSupabase() {
   await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
 }
 
-// ── PATCH updateBalance to sync Supabase + level UI ──
-// Games should set window._lastXpGain = { wager, multiplier } before calling updateBalance
-const _origUpdateBalance = updateBalance;
-updateBalance = function() {
-  _origUpdateBalance();
-  if (window._lastXpGain) {
-    const { wager, multiplier } = window._lastXpGain;
-    window._lastXpGain = null;
-    addXp(wager, multiplier);
-  } else {
-    updateLevelUI();
-  }
-  saveBalanceToSupabase();
-};
-
 // ── PROFILE PANEL ──
 function openProfile() {
   if (!currentUser) return;
@@ -3200,6 +3193,7 @@ function openProfile() {
   document.getElementById('tipAmount').value = '';
   document.getElementById('tipMsg').textContent = '';
   document.getElementById('profileUsernameMsg').textContent = '';
+  updateLevelUI();
   document.getElementById('profileOverlay').classList.add('open');
 }
 
@@ -3256,6 +3250,11 @@ async function doTip() {
   document.getElementById('tipUsername').value = '';
   document.getElementById('tipAmount').value = '';
   toast('💸 Tipped ' + fmt(amount) + ' to ' + toUsername, 'win');
+
+  // Log tip to tip_log table
+  if (currentUser?._username) {
+    await sb.from('tip_log').insert({ from_username: currentUser._username, to_username: toUsername, amount: amount });
+  }
 }
 
 function closeProfile() {
@@ -3533,40 +3532,23 @@ async function checkDailyBonus() {
   setTimeout(() => el.remove(), 4000);
 }
 
-// ── Hook tip log insert into doTip ──
-const _origDoTip = doTip;
-doTip = async function() {
-  const toUsername = document.getElementById('tipUsername').value.trim().toLowerCase();
-  const amount = parseFloat(document.getElementById('tipAmount').value);
-  // Call original first
-  await _origDoTip();
-  // If success (msg shows ok text), log it
-  const msg = document.getElementById('tipMsg');
-  if (msg.classList.contains('ok') && currentUser?._username && toUsername && amount > 0) {
-    await sb.from('tip_log').insert({ from_username: currentUser._username, to_username: toUsername, amount: amount });
-  }
-};
-
-// ── Update openProfile to show level ──
-const _origOpenProfile = openProfile;
-openProfile = function() {
-  _origOpenProfile();
-  updateLevelUI();
-};
-
-
-
 
 (async () => {
   // Show loading screen while we check for existing session
   document.getElementById('rcLoadingScreen').style.display = 'flex';
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (session && session.user) {
-    await onAuthSuccess(session.user);
-    // loading screen hidden inside onAuthSuccess
-  } else {
-    // No session — show login
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      await onAuthSuccess(session.user);
+      // loading screen hidden inside onAuthSuccess
+    } else {
+      // No session — show login
+      document.getElementById('rcLoadingScreen').style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Session check failed:', err);
+    // Hide loading screen and fall back to login on any error
     document.getElementById('rcLoadingScreen').style.display = 'none';
   }
 
