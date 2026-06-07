@@ -5813,9 +5813,16 @@ async function onAuthSuccess(user) {
   let isNewUser = false;
   const { data, error } = await sb
     .from('users')
-    .select('balance, stats, dev_password, username, username_set, betting_disabled, temp_dev_until')
+    .select('balance, stats, dev_password, username, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
+
+  // Separately fetch username_set — column may not exist on all deployments
+  let usernameSet = false;
+  if (data && !error) {
+    const { data: usRow } = await sb.from('users').select('username_set').eq('id', user.id).single();
+    usernameSet = usRow?.username_set || false;
+  }
 
   if (data && !error) {
     balance = (data.balance !== null && data.balance !== undefined) ? parseFloat(data.balance) : 0;
@@ -5833,7 +5840,7 @@ async function onAuthSuccess(user) {
       stats = DEFAULT_STATS();
     }
     currentUser._username = data.username || null;
-    currentUser._usernameSet = data.username_set || false;
+    currentUser._usernameSet = usernameSet || !!(data.username); // if username exists in DB, treat as set
     currentUser._bettingDisabled = data.betting_disabled || false;
     // Check temp dev tools
     const tempDevUntil = data.temp_dev_until ? new Date(data.temp_dev_until) : null;
@@ -5904,9 +5911,20 @@ updateBalance = function() {
 };
 
 // ── PROFILE PANEL ──
-function openProfile() {
+async function openProfile() {
   if (!currentUser) return;
   const isGuestUser = currentUser._isGuest;
+
+  // If we have no username in memory but user is authenticated, re-fetch from DB
+  // This covers refresh races, missing columns, or any load error in onAuthSuccess
+  if (!isGuestUser && !currentUser._username) {
+    const { data: freshRow } = await sb.from('users').select('username').eq('id', currentUser.id).single();
+    if (freshRow?.username) {
+      currentUser._username = freshRow.username;
+      currentUser._usernameSet = true;
+      document.getElementById('userChipLabel').textContent = '👤 ' + freshRow.username;
+    }
+  }
   const email = isGuestUser ? null : currentUser.email;
   const username = currentUser._username;
   document.getElementById('profileAvatar').textContent = isGuestUser ? '🎲' : (username || email)[0].toUpperCase();
