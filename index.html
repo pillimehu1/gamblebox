@@ -1785,9 +1785,9 @@
         <span class="bet-label">Bet</span>
         <input type="number" class="bet-input" id="minesBet" value="10" min="1">
         <div class="bet-quick">
-          <span class="bq" onclick="halfBet('minesBet')">½</span>
-          <span class="bq" onclick="doubleBet('minesBet')">2×</span>
-          <span class="bq" onclick="maxBet('minesBet')">Max</span>
+          <span class="bq" onclick="if(!minesActive) halfBet('minesBet')">½</span>
+          <span class="bq" onclick="if(!minesActive) doubleBet('minesBet')">2×</span>
+          <span class="bq" onclick="if(!minesActive) maxBet('minesBet')">Max</span>
         </div>
       </div>
 
@@ -1840,9 +1840,9 @@
         <span class="bet-label">Bet</span>
         <input type="number" class="bet-input" id="towerBet" value="10" min="1">
         <div class="bet-quick">
-          <span class="bq" onclick="halfBet('towerBet')">½</span>
-          <span class="bq" onclick="doubleBet('towerBet')">2×</span>
-          <span class="bq" onclick="maxBet('towerBet')">Max</span>
+          <span class="bq" onclick="if(!towerActive) halfBet('towerBet')">½</span>
+          <span class="bq" onclick="if(!towerActive) doubleBet('towerBet')">2×</span>
+          <span class="bq" onclick="if(!towerActive) maxBet('towerBet')">Max</span>
         </div>
       </div>
 
@@ -3317,17 +3317,27 @@ function plinkoDrop() {
   const mults = PLINKO_MULTS[rows] || PLINKO_MULTS[8];
   const board = document.querySelector('.plinko-board');
 
+  // Track aggregate results across all balls in this drop
+  let ballsFinished = 0;
+  let totalPayout = 0;
+
   for (let b = 0; b < ballCount; b++) {
     if (!deductBet(bet)) break;
     plinkoActiveBalls++;
     plinkoUpdateBtn();
 
-    // Stagger each ball slightly
-    setTimeout(() => _plinkoDropOneBall(bet, rows, mults, board), b * 180);
+    setTimeout(() => _plinkoDropOneBall(bet, rows, mults, board, (payout) => {
+      totalPayout += payout;
+      ballsFinished++;
+      if (ballsFinished === ballCount) {
+        // All balls done — one trackGame call for the whole session
+        trackGame('plinko', totalBet, totalPayout, totalPayout > totalBet);
+      }
+    }), b * 180);
   }
 }
 
-function _plinkoDropOneBall(bet, rows, mults, board) {
+function _plinkoDropOneBall(bet, rows, mults, board, onDone) {
   const god = DEV.godMode;
   const force = DEV.plinkoForce;
   let resultIdx = 0;
@@ -3383,7 +3393,7 @@ function _plinkoDropOneBall(bet, rows, mults, board) {
     const payout = bet * mults[resultIdx];
     balance += payout;
     updateBalance();
-    trackGame('plinko', bet, payout, payout > bet);
+    if (typeof onDone === 'function') onDone(payout);
 
     if (payout > bet) toast(`Hit ${mults[resultIdx]}x! Won ${fmt(payout)}`, 'win');
     else if (payout === bet) toast(`Hit ${mults[resultIdx]}x. Break even.`, '');
