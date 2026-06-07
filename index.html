@@ -1848,6 +1848,14 @@ function trackGame(gameType, bet, payout, isWin) {
   saveState();
   if(document.getElementById('statsOverlay').classList.contains('open')) updateStatsUI();
 
+  // No XP if any dev mode is active
+  const devActive = devInfiniteBalance || DEV.godMode
+    || DEV.minesForce !== 'random' || DEV.towerForce !== 'random'
+    || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
+    || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
+    || DEV.plinkoForce !== 'random';
+  if (devActive) return;
+
   // Award XP for every game played (based on wager)
   if (typeof addXp === 'function') addXp(bet, isWin ? (payout / bet) : 0);
 }
@@ -3304,7 +3312,7 @@ async function doSendResetEmail() {
 //  Every 10 levels: reward = 200 × (tier^1.6)  where tier = level/10
 // ════════════════════════════════════════════════════════════
 function xpForLevel(n) {
-  return Math.floor(500 * Math.pow(n, 2.5));
+  return Math.floor(1000 * Math.pow(n, 4));
 }
 
 function totalXpForLevel(n) {
