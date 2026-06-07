@@ -1116,6 +1116,42 @@
 
   /* ── RECENT WINS FEED ── */
   .wins-feed { display:flex; flex-direction:column; gap:8px; }
+  .wf-tab {
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:.75rem;
+    border:none; background:transparent; color:var(--muted);
+    border-radius:7px; padding:5px 10px; cursor:pointer;
+    transition:all .2s; white-space:nowrap;
+  }
+  .wf-tab.active { background:rgba(240,192,64,.15); color:var(--gold); }
+
+  /* ── MINI FEED ── */
+  .mini-feed-wrap { margin-top:16px; }
+  .mini-feed-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .mini-feed-title { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; }
+  .mini-feed-tabs { display:flex; gap:3px; background:rgba(255,255,255,.04); border-radius:8px; padding:2px; }
+  .mf-tab {
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:.68rem;
+    border:none; background:transparent; color:var(--muted);
+    border-radius:6px; padding:3px 8px; cursor:pointer; transition:all .2s; white-space:nowrap;
+  }
+  .mf-tab.active { background:rgba(240,192,64,.15); color:var(--gold); }
+  .mini-feed { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; scrollbar-width:none; }
+  .mini-feed::-webkit-scrollbar { display:none; }
+  .mf-item {
+    display:flex; align-items:center; gap:8px;
+    padding:7px 10px; border-radius:9px;
+    background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.04);
+    font-size:.78rem;
+  }
+  .mf-game { font-size:.9rem; flex-shrink:0; }
+  .mf-info { flex:1; min-width:0; }
+  .mf-user { font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mf-detail { font-size:.68rem; color:var(--muted); }
+  .mf-amt { font-weight:700; color:var(--green); white-space:nowrap; font-size:.8rem; }
+  .mf-empty { text-align:center; color:var(--muted); font-size:.78rem; padding:12px 0; }
   .wf-item {
     display:flex; align-items:center; gap:10px;
     background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.05);
@@ -1729,10 +1765,14 @@
 
     <!-- Recent Big Wins Feed -->
     <div class="gcard" style="margin-top:0;">
-      <div class="gcard-title" style="margin-bottom:12px;">🔥 Recent Big Wins</div>
-      <div class="wins-feed" id="winsFeed">
-        <div class="wf-empty">Loading…</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="gcard-title" style="margin-bottom:0;">🔥 Recent Big Wins</div>
+        <div style="display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:10px;padding:3px;">
+          <button class="wf-tab active" id="wfTabLucky" onclick="setWfTab('lucky')">⚡ Lucky 5×+</button>
+          <button class="wf-tab" id="wfTabHighwager" onclick="setWfTab('highwager')">🐋 Whale 100M+</button>
+        </div>
       </div>
+      <div class="wins-feed" id="winsFeed"><div class="wf-empty">Loading…</div></div>
     </div>
   </div>
 
@@ -1778,6 +1818,16 @@
         <button class="btn-primary" id="minesStartBtn" onclick="minesStart()">Start Game</button>
         <button class="btn-secondary" id="minesCashBtn" onclick="minesCashout()" disabled>Cash Out</button>
       </div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_mines_lucky" onclick="setMfTab('mines','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_mines_highwager" onclick="setMfTab('mines','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_mines"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -1816,6 +1866,16 @@
             <button class="btn-secondary" id="towerCashBtn" onclick="towerCashout()" disabled>Cash Out</button>
           </div>
         </div>
+      </div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_tower_lucky" onclick="setMfTab('tower','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_tower_highwager" onclick="setMfTab('tower','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_tower"><div class="mf-empty">Loading…</div></div>
       </div>
     </div>
   </div>
@@ -1861,6 +1921,16 @@
       <div class="divider"></div>
       <div class="history-label">Recent Results</div>
       <div class="roulette-history" id="rouletteHistory"></div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_roulette_lucky" onclick="setMfTab('roulette','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_roulette_highwager" onclick="setMfTab('roulette','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_roulette"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -1895,6 +1965,16 @@
 
       <div class="bj-controls" id="bjControls">
         <button class="btn-primary" onclick="bjDeal()">Deal</button>
+      </div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_blackjack_lucky" onclick="setMfTab('blackjack','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_blackjack_highwager" onclick="setMfTab('blackjack','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_blackjack"><div class="mf-empty">Loading…</div></div>
       </div>
     </div>
   </div>
@@ -1951,6 +2031,16 @@
         <button class="btn-primary" style="flex:2;" id="cfBtn" onclick="cfFlip()">Flip Coin</button>
         <button class="btn-secondary" style="flex:1;display:none;border-color:var(--green);color:var(--green);" id="cfCashoutBtn" onclick="cfCashout()">Cash Out</button>
       </div>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_coinflip_lucky" onclick="setMfTab('coinflip','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_coinflip_highwager" onclick="setMfTab('coinflip','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_coinflip"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -1976,6 +2066,16 @@
       </div>
       
       <button class="btn-primary" style="width:100%;" id="kenoBtn" onclick="kenoPlay()">Draw Numbers</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_keno_lucky" onclick="setMfTab('keno','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_keno_highwager" onclick="setMfTab('keno','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_keno"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -2021,6 +2121,16 @@
       <div id="plinkoActiveBalls" style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:8px;min-height:18px;"></div>
       <div id="plinkoTotalCost" style="text-align:center;font-size:.8rem;color:var(--gold);margin-top:2px;min-height:16px;"></div>
       <button class="btn-primary" style="width:100%; margin-top:20px;" id="plinkoBtn" onclick="plinkoDrop()">Drop Ball</button>
+      <div class="mini-feed-wrap">
+        <div class="mini-feed-header">
+          <span class="mini-feed-title">🔥 Recent Big Wins</span>
+          <div class="mini-feed-tabs">
+            <button class="mf-tab active" id="mfTab_plinko_lucky" onclick="setMfTab('plinko','lucky')">⚡ 5×+</button>
+            <button class="mf-tab" id="mfTab_plinko_highwager" onclick="setMfTab('plinko','highwager')">🐋 100M+</button>
+          </div>
+        </div>
+        <div class="mini-feed" id="miniFeed_plinko"><div class="mf-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -3500,40 +3610,53 @@ const GAME_ICONS = {
 async function pushWinToFeed(gameType, username, bet, payout) {
   if (!username || username === 'Guest') return;
   try {
-    await sb.from('win_feed').insert({ username, game_type: gameType, bet, payout });
+    const multiplier = bet > 0 ? payout / bet : 0;
+    await sb.from('win_feed').insert({ username, game_type: gameType, bet, payout, multiplier });
     loadWinsFeed();
   } catch(e) {}
+}
+
+let _wfTab = 'lucky';
+function setWfTab(tab) {
+  _wfTab = tab;
+  document.getElementById('wfTabLucky').classList.toggle('active', tab === 'lucky');
+  document.getElementById('wfTabHighwager').classList.toggle('active', tab === 'highwager');
+  loadWinsFeed();
 }
 
 async function loadWinsFeed() {
   const feed = document.getElementById('winsFeed');
   if (!feed) return;
   try {
-    const { data, error } = await sb
-      .from('win_feed')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
+    let query = sb.from('win_feed').select('*').order('created_at', { ascending: false }).limit(15);
+    if (_wfTab === 'lucky') query = query.gte('multiplier', 5);
+    else query = query.gte('bet', 100_000_000).order('bet', { ascending: false });
+    const { data, error } = await query;
     if (error || !data || !data.length) {
-      feed.innerHTML = '<div class="wf-empty">No big wins yet. Be the first! 🏆</div>';
+      feed.innerHTML = `<div class="wf-empty">${_wfTab === 'lucky' ? 'No 5×+ wins yet. Hit big! ⚡' : 'No 100M+ bets yet. Go whale! 🐋'}</div>`;
       return;
     }
-    feed.innerHTML = data.map(w => `
-      <div class="wf-item">
+    feed.innerHTML = data.map(w => {
+      const mult = (w.multiplier ?? (w.payout / w.bet));
+      const profit = w.payout - w.bet;
+      const tag = _wfTab === 'lucky'
+        ? `<span style="color:var(--gold);font-weight:700">${mult.toFixed(2)}×</span>`
+        : `<span style="color:var(--blue);font-weight:700">${fmt(w.bet)} bet</span>`;
+      return `<div class="wf-item">
         <div class="wf-game">${GAME_ICONS[w.game_type] || '🎰'}</div>
         <div class="wf-info">
-          <div class="wf-user">${w.username}</div>
-          <div class="wf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier · ${timeAgo(new Date(w.created_at))}</div>
+          <div class="wf-user">${w.username || 'Anonymous'}</div>
+          <div class="wf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${tag} · ${timeAgo(new Date(w.created_at))}</div>
         </div>
-        <div class="wf-amt">+${fmt(w.payout - w.bet)}</div>
-      </div>
-    `).join('');
+        <div class="wf-amt">+${fmt(profit)}</div>
+      </div>`;
+    }).join('');
   } catch(e) {
     feed.innerHTML = '<div class="wf-empty">Could not load wins feed.</div>';
   }
 }
 
-// Patch trackGame to push wins to Supabase — skips if any dev mode is active
+// Patch trackGame — skips dev mode, pushes lucky (5×+) and whale (100M+ bet) wins
 const _origTrackGame = trackGame;
 trackGame = function(gameType, bet, payout, isWin) {
   _origTrackGame(gameType, bet, payout, isWin);
@@ -3542,9 +3665,10 @@ trackGame = function(gameType, bet, payout, isWin) {
     || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
     || DEV.plinkoForce !== 'random';
-  if (devActive) return;
-  if (isWin && payout >= bet * 5) {
-    const username = currentUser?._username || null;
+  if (devActive || !isWin) return;
+  const username = currentUser?._username || null;
+  const mult = bet > 0 ? payout / bet : 0;
+  if (mult >= 5 || bet >= 100_000_000) {
     pushWinToFeed(gameType, username, bet, payout);
   }
 };
@@ -3610,7 +3734,7 @@ async function doSignup() {
   if (error) { errEl.textContent = error.message; return; }
   if (data.user && data.session) {
     // Store username for onAuthSuccess to pick up
-    window._pendingUsername = username;
+    window._pendingUsername = usernameTrimmed;
     await onAuthSuccess(data.user);
   } else {
     sucEl.textContent = '✓ Check your email to confirm your account, then sign in.';
@@ -3623,16 +3747,13 @@ let isGuest = false;
 function doGuestLogin() {
   isGuest = true;
   currentUser = { _username: null, _usernameSet: false, email: 'guest', _isGuest: true };
-  balance = 1000;
-  stats = DEFAULT_STATS();
+  balance = 1000; stats = DEFAULT_STATS();
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('rcLoadingScreen').style.display = 'none';
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('userChipLabel').textContent = '🎲 Guest';
-  document.getElementById('devBtn').style.display = 'none'; // guests can't access dev
-  updateBalance();
-  updateStatsUI();
-  updateLevelUI();
+  document.getElementById('devBtn').style.display = 'none';
+  updateBalance(); updateStatsUI(); updateLevelUI();
   toast('🎲 Playing as Guest — good luck!', 'win');
 }
 
@@ -3642,13 +3763,10 @@ async function doLogout() {
   if (!ok) return;
   closeProfile();
   if (isGuest) {
-    isGuest = false;
-    currentUser = null;
-    balance = 0;
-    stats = DEFAULT_STATS();
+    isGuest = false; currentUser = null; balance = 0; stats = DEFAULT_STATS();
     clearTimeout(_saveTimer);
     document.getElementById('userChip').style.display = 'none';
-    document.getElementById('devBtn').style.display = 'flex'; // restore for next login
+    document.getElementById('devBtn').style.display = 'flex';
     document.getElementById('authOverlay').classList.remove('hidden');
     document.getElementById('loginError').textContent = '';
     return;
@@ -3672,9 +3790,8 @@ async function onAuthSuccess(user) {
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('authOverlay').classList.add('hidden');
   document.getElementById('rcLoadingScreen').style.display = 'none';
-  document.getElementById('devBtn').style.display = 'flex'; // real accounts get dev access
+  document.getElementById('devBtn').style.display = 'flex';
 
-  // Always load from Supabase
   let isNewUser = false;
   const { data, error } = await sb
     .from('users')
@@ -3696,6 +3813,7 @@ async function onAuthSuccess(user) {
     }
     currentUser._username = data.username || null;
     currentUser._usernameSet = data.username_set || false;
+    // Update header chip with username or fallback to email
     const chipLabel = data.username || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   } else {
@@ -3716,9 +3834,7 @@ async function onAuthSuccess(user) {
     const chipLabel = pendingUsername || user.email.split('@')[0];
     document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
   }
-  updateBalance();
-  updateStatsUI();
-  updateLevelUI();
+  updateBalance(); updateStatsUI(); updateLevelUI();
   const displayName = currentUser._username || user.email.split('@')[0];
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
@@ -3897,8 +4013,8 @@ async function doSendResetEmail() {
 
 // ════════════════════════════════════════════════════════════
 //  LEVEL SYSTEM
-//  XP = wager amount (every bet earns XP win or lose)
-//  XP needed for level N = 500 × N  up to level 100, then scales steeply
+//  XP = wager amount per game (win or lose)
+//  XP to reach level N scales steeply after level 100
 //  Every 10 levels: reward = 200 × (tier^1.6)  where tier = level/10
 // ════════════════════════════════════════════════════════════
 function xpForLevel(n) {
@@ -4144,15 +4260,11 @@ async function checkDailyBonus() {
   const freshBalance = parseFloat(data.balance) || balance;
   balance = freshBalance + bonus;
   document.getElementById('balanceDisplay').textContent = fmt(balance);
-  // Save full row to avoid partial overwrites
   clearTimeout(_saveTimer);
   await sb.from('users').upsert({
-    id: currentUser.id,
-    email: currentUser.email,
-    balance: balance,
-    stats: JSON.stringify(stats),
-    dev_password: devPassword,
-    last_bonus_at: now.toISOString()
+    id: currentUser.id, email: currentUser.email,
+    balance: balance, stats: JSON.stringify(stats),
+    dev_password: devPassword, last_bonus_at: now.toISOString()
   });
 
   // Show bonus toast
@@ -4164,8 +4276,71 @@ async function checkDailyBonus() {
 }
 
 
+// ════════════════════════════════════════════════════════════
+//  MINI FEED (per-game panel)
+// ════════════════════════════════════════════════════════════
+const _mfTabs = {}; // panel -> 'lucky' | 'highwager'
+const PANELS = ['mines','tower','roulette','blackjack','coinflip','keno','plinko'];
+
+function setMfTab(panel, tab) {
+  _mfTabs[panel] = tab;
+  document.getElementById(`mfTab_${panel}_lucky`).classList.toggle('active', tab === 'lucky');
+  document.getElementById(`mfTab_${panel}_highwager`).classList.toggle('active', tab === 'highwager');
+  loadMiniFeed(panel);
+}
+
+async function loadMiniFeed(panel) {
+  const el = document.getElementById(`miniFeed_${panel}`);
+  if (!el) return;
+  el.innerHTML = '<div class="mf-empty">Loading…</div>';
+  const tab = _mfTabs[panel] || 'lucky';
+  try {
+    let q = sb.from('win_feed').select('*').order('created_at', { ascending: false }).limit(5);
+    if (tab === 'lucky') q = q.gte('multiplier', 5);
+    else q = q.gte('bet', 100_000_000).order('bet', { ascending: false });
+    const { data, error } = await q;
+    if (error || !data || !data.length) {
+      el.innerHTML = `<div class="mf-empty">${tab === 'lucky' ? 'No 5×+ wins yet ⚡' : 'No 100M+ bets yet 🐋'}</div>`;
+      return;
+    }
+    el.innerHTML = data.map(w => {
+      const mult = w.multiplier ?? (w.payout / w.bet);
+      const profit = w.payout - w.bet;
+      const tag = tab === 'lucky'
+        ? `<span style="color:var(--gold);font-weight:700">${mult.toFixed(2)}×</span>`
+        : `<span style="color:var(--blue);font-weight:700">${fmt(w.bet)} bet</span>`;
+      return `<div class="mf-item">
+        <div class="mf-game">${GAME_ICONS[w.game_type] || '🎰'}</div>
+        <div class="mf-info">
+          <div class="mf-user">${w.username || 'Anonymous'}</div>
+          <div class="mf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${tag} · ${timeAgo(new Date(w.created_at))}</div>
+        </div>
+        <div class="mf-amt">+${fmt(profit)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="mf-empty">Could not load.</div>';
+  }
+}
+
+// Load mini feed whenever a game tab is shown
+const _origShowTab = showTab;
+showTab = function(name) {
+  _origShowTab(name);
+  if (PANELS.includes(name)) loadMiniFeed(name);
+};
+
+// Also refresh mini feeds when main feed refreshes
+const _origLoadWinsFeed = loadWinsFeed;
+loadWinsFeed = async function() {
+  await _origLoadWinsFeed();
+  // Refresh whichever panel is currently visible
+  const activePanel = PANELS.find(p => document.getElementById(`panel-${p}`)?.classList.contains('active'));
+  if (activePanel) loadMiniFeed(activePanel);
+};
+
+
 (async () => {
-  // Show loading screen while we check for existing session
   document.getElementById('rcLoadingScreen').style.display = 'flex';
 
   try {
