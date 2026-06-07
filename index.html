@@ -2235,6 +2235,9 @@ function minesStart(){
   renderMinesGrid(false);
   document.getElementById('minesStartBtn').disabled=true;
   document.getElementById('minesCashBtn').disabled=true;
+  const cashBtn = document.getElementById('minesCashBtn');
+  cashBtn.textContent = 'Cash Out';
+  cashBtn._confirmPending = false;
   document.getElementById('minesBet').disabled=true;
   document.getElementById('minesCount').disabled=true;
   document.getElementById('minesMult').textContent='1.00×';
@@ -2304,26 +2307,36 @@ window.minesClick = function(i) {
   }
 };
 
-window.minesCashout = async function() {
+window.minesCashout = function() {
   if (!minesActive) return;
   syncDevInputs();
   const bombs = parseInt(document.getElementById('minesCount').value) || 3;
   const baseMult = minesCalcMult(minesGemsFound, bombs);
   const mult = baseMult * (DEV.minesMult || 1);
   const win = currentMinesBet * mult;
-  // Lock grid so tiles can't be clicked while confirm is open
-  minesActive = false;
-  const ok = await showConfirm({ icon:'💰', title:'Cash Out?', msg:`Lock in ${fmt(win)} (${mult.toFixed(2)}×)?`, yesText:'Cash Out' });
-  if (!ok) { minesActive = true; return; } // Restore if cancelled
-  balance += win; updateBalance();
-  minesActive = false;
-  renderMinesGrid(true);
-  document.getElementById('minesStartBtn').disabled = false;
-  document.getElementById('minesCashBtn').disabled = true;
-  document.getElementById('minesBet').disabled = false;
-  document.getElementById('minesCount').disabled = false;
-  toast('💰 Cashed out ' + fmt(win) + '!', 'win');
-  trackGame('mines', currentMinesBet, win, true);
+  const btn = document.getElementById('minesCashBtn');
+  // Simple double-confirm via button text
+  if (btn._confirmPending) {
+    clearTimeout(btn._confirmTimer);
+    btn._confirmPending = false;
+    btn.textContent = 'Cash Out';
+    balance += win; updateBalance();
+    minesActive = false;
+    renderMinesGrid(true);
+    document.getElementById('minesStartBtn').disabled = false;
+    document.getElementById('minesCashBtn').disabled = true;
+    document.getElementById('minesBet').disabled = false;
+    document.getElementById('minesCount').disabled = false;
+    toast('💰 Cashed out ' + fmt(win) + '!', 'win');
+    trackGame('mines', currentMinesBet, win, true);
+  } else {
+    btn._confirmPending = true;
+    btn.textContent = '✓ Confirm (' + fmt(win) + ')';
+    btn._confirmTimer = setTimeout(() => {
+      btn._confirmPending = false;
+      btn.textContent = 'Cash Out';
+    }, 3000);
+  }
 };
 
 renderMinesGrid(false);
@@ -3042,7 +3055,7 @@ function kenoPlay() {
   if(!deductBet(bet)) return;
   
   document.getElementById('kenoBet').disabled = true;
-  document.getElementById('kenoPlayBtn').disabled = true;
+  document.getElementById('kenoBtn').disabled = true;
 
   let cells = document.querySelectorAll('.keno-cell');
   cells.forEach(c => c.classList.remove('hit', 'miss'));
@@ -3092,7 +3105,7 @@ function kenoPlay() {
   else toast(`Matched ${matches}. Lost ${fmt(bet)}`, 'lose');
 
   document.getElementById('kenoBet').disabled = false;
-  document.getElementById('kenoPlayBtn').disabled = false;
+  document.getElementById('kenoBtn').disabled = false;
 }
 //  PLINKO (Animation & Peg Update)
 // ════════════════════════════════════════════════════════════
@@ -3425,56 +3438,64 @@ function confirmResolve(result) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  RECENT WINS FEED
+//  RECENT WINS FEED (Online - Supabase)
 // ════════════════════════════════════════════════════════════
 const GAME_ICONS = {
   mines: '💣', tower: '🗼', roulette: '🎡',
   blackjack: '🃏', coinflip: '🪙', keno: '🔢', plinko: '🔽'
 };
 
-const _localWins = [];
-
-function pushWinToFeed(gameType, username, bet, payout) {
-  if (payout < bet * 2) return; // Only notable wins (2x+)
-  _localWins.unshift({ gameType, username, bet, payout, ts: Date.now() });
-  if (_localWins.length > 20) _localWins.pop();
-  renderWinsFeed();
+async function pushWinToFeed(gameType, username, bet, payout) {
+  if (!username || username === 'Guest') return;
+  try {
+    await sb.from('win_feed').insert({ username, game_type: gameType, bet, payout });
+    loadWinsFeed();
+  } catch(e) {}
 }
 
-function renderWinsFeed() {
+async function loadWinsFeed() {
   const feed = document.getElementById('winsFeed');
   if (!feed) return;
-  if (!_localWins.length) {
-    feed.innerHTML = '<div class="wf-empty">No big wins yet this session. Be the first! 🏆</div>';
-    return;
-  }
-  feed.innerHTML = _localWins.slice(0, 8).map(w => `
-    <div class="wf-item">
-      <div class="wf-game">${GAME_ICONS[w.gameType] || '🎰'}</div>
-      <div class="wf-info">
-        <div class="wf-user">${w.username}</div>
-        <div class="wf-detail">${w.gameType.charAt(0).toUpperCase()+w.gameType.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier</div>
+  try {
+    const { data, error } = await sb
+      .from('win_feed')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error || !data || !data.length) {
+      feed.innerHTML = '<div class="wf-empty">No big wins yet. Be the first! 🏆</div>';
+      return;
+    }
+    feed.innerHTML = data.map(w => `
+      <div class="wf-item">
+        <div class="wf-game">${GAME_ICONS[w.game_type] || '🎰'}</div>
+        <div class="wf-info">
+          <div class="wf-user">${w.username}</div>
+          <div class="wf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier</div>
+        </div>
+        <div class="wf-amt">+${fmt(w.payout - w.bet)}</div>
       </div>
-      <div class="wf-amt">+${fmt(w.payout - w.bet)}</div>
-    </div>
-  `).join('');
+    `).join('');
+  } catch(e) {
+    feed.innerHTML = '<div class="wf-empty">Could not load wins feed.</div>';
+  }
 }
 
-// Patch trackGame to also push to feed
+// Patch trackGame to push wins to Supabase — skips if any dev mode is active
 const _origTrackGame = trackGame;
 trackGame = function(gameType, bet, payout, isWin) {
   _origTrackGame(gameType, bet, payout, isWin);
+  const devActive = devInfiniteBalance || DEV.godMode
+    || DEV.minesForce !== 'random' || DEV.towerForce !== 'random'
+    || DEV.rouletteMode !== 'random' || DEV.bjMode !== 'random'
+    || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
+    || DEV.plinkoForce !== 'random';
+  if (devActive) return;
   if (isWin && payout >= bet * 2) {
-    const username = (typeof currentUser !== 'undefined' && currentUser?._username)
-      ? currentUser._username
-      : (typeof currentUser !== 'undefined' && currentUser?.email)
-        ? currentUser.email.split('@')[0]
-        : 'Guest';
+    const username = currentUser?._username || null;
     pushWinToFeed(gameType, username, bet, payout);
   }
 };
-
-renderWinsFeed();
 
 </script>
 <script>
@@ -3638,6 +3659,7 @@ async function onAuthSuccess(user) {
   updateLevelUI();
   toast('👑 Welcome back, ' + (currentUser._username || user.email.split('@')[0]) + '!', 'win');
   setTimeout(checkDailyBonus, 1500);
+  loadWinsFeed();
 }
 
 // ── SAVE TO SUPABASE ──
@@ -4077,6 +4099,10 @@ async function checkDailyBonus() {
       stats = DEFAULT_STATS();
     }
   });
+
+  // Load wins feed now that sb is ready, refresh every 30s
+  loadWinsFeed();
+  setInterval(loadWinsFeed, 30000);
 })();
 </script>
 </body>
