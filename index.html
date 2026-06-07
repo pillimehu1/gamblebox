@@ -1273,7 +1273,76 @@
   .pf-result { margin-top:14px; font-size:.8rem; color:var(--muted); line-height:1.6; }
   .pf-result .ok { color:var(--green); font-weight:700; }
   .pf-result .fail { color:var(--red); font-weight:700; }
-  .pf-separator { height:1px; background:rgba(255,255,255,.06); margin:16px 0; }
+  /* ── ACHIEVEMENT TOAST ── */
+  .ach-toast {
+    position:fixed; bottom:80px; right:16px; z-index:1000;
+    background:linear-gradient(135deg,#1a1a2e,#0e0e1a);
+    border:1px solid var(--gold); border-radius:14px;
+    padding:14px 18px; display:flex; align-items:center; gap:12px;
+    max-width:300px; box-shadow:0 8px 32px rgba(240,192,64,.2);
+    animation:achSlideIn .4s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;
+  }
+  @keyframes achSlideIn {
+    from{opacity:0;transform:translateX(120px)}
+    to{opacity:1;transform:translateX(0)}
+  }
+  .ach-toast-icon { font-size:2rem; flex-shrink:0; }
+  .ach-toast-body { flex:1; min-width:0; }
+  .ach-toast-title { font-size:.65rem; text-transform:uppercase; letter-spacing:2px; color:var(--gold); margin-bottom:2px; }
+  .ach-toast-name { font-size:.95rem; font-weight:700; color:var(--text); }
+  .ach-toast-desc { font-size:.72rem; color:var(--muted); margin-top:2px; }
+
+  /* ── ACHIEVEMENTS OVERLAY ── */
+  .ach-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.88); backdrop-filter:blur(10px);
+    z-index:400; align-items:flex-start; justify-content:center;
+    padding:16px 16px 40px; overflow-y:auto;
+  }
+  .ach-overlay.open { display:flex; }
+  .ach-panel {
+    background:#0d0d1a; border:1px solid var(--border);
+    border-radius:24px; width:min(540px,100%);
+    box-shadow:0 0 80px rgba(240,192,64,.1);
+    animation:fadeIn .3s ease; margin:auto; overflow:hidden;
+  }
+  .ach-panel-header {
+    position:sticky; top:0; z-index:10;
+    background:#0d0d1a; border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 20px;
+  }
+  .ach-panel-body { padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ach-card {
+    background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06);
+    border-radius:14px; padding:14px; display:flex; gap:10px; align-items:flex-start;
+    transition:all .2s;
+  }
+  .ach-card.unlocked {
+    border-color:rgba(240,192,64,.3); background:rgba(240,192,64,.04);
+  }
+  .ach-card-icon { font-size:1.6rem; flex-shrink:0; filter:grayscale(1); opacity:.4; }
+  .ach-card.unlocked .ach-card-icon { filter:none; opacity:1; }
+  .ach-card-name { font-size:.82rem; font-weight:700; color:var(--muted); }
+  .ach-card.unlocked .ach-card-name { color:var(--text); }
+  .ach-card-desc { font-size:.7rem; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .ach-card-badge {
+    font-size:.55rem; background:rgba(240,192,64,.15); border:1px solid rgba(240,192,64,.3);
+    color:var(--gold); border-radius:4px; padding:1px 5px; margin-top:4px;
+    display:inline-block; letter-spacing:.5px; text-transform:uppercase;
+  }
+  .ach-progress { font-size:.65rem; color:var(--muted); margin-top:8px; padding:0 20px 4px; }
+
+  /* ── SESSION TIMER ── */
+  .session-timer {
+    font-size:.65rem; color:var(--muted); text-align:center;
+    letter-spacing:.5px; padding:2px 0;
+  }
+
+  @media(max-width:480px) {
+    .ach-panel-body { grid-template-columns:1fr; }
+  }
 </style>
 </head>
 
@@ -1411,13 +1480,20 @@
         <div class="balance-label">Balance</div>
         <div class="balance-amount" id="balanceDisplay">$0.00</div>
       </div>
+      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
+      <div>
+        <div class="balance-label">Session</div>
+        <div class="session-timer" id="sessionTimer">00:00</div>
+      </div>
     </div>
   </div>
   <div class="header-bottom">
     <button class="hdr-btn hdr-btn-stats" onclick="openStats()" title="Stats">📊</button>
     <button class="hdr-btn hdr-btn-lb" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
+    <button class="hdr-btn" onclick="openAchievements()" title="Achievements" id="achBtn" style="border-color:rgba(240,192,64,.35);color:rgba(240,192,64,.7);">🎖️</button>
     <button class="hdr-btn hdr-btn-tips" onclick="openTipLog()" title="Tip Log">💸</button>
     <button class="hdr-btn" style="border-color:rgba(0,176,255,.35);color:rgba(0,176,255,.7);" onclick="openPF()" title="Provably Fair">🔐</button>
+    <button class="hdr-btn" id="soundBtn" onclick="toggleSound()" title="Sound" style="border-color:rgba(0,230,118,.35);color:rgba(0,230,118,.7);">🔊</button>
     <button class="hdr-btn hdr-btn-dev" id="devBtn" onclick="openDev()" title="Dev Panel">⚙️</button>
     <button class="hdr-btn hdr-btn-add" onclick="openModal()">+ Add Funds</button>
     <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
@@ -1430,6 +1506,18 @@
 
 <!-- ── TOAST ── -->
 <div id="toast"></div>
+
+<!-- ── ACHIEVEMENTS OVERLAY ── -->
+<div class="ach-overlay" id="achOverlay">
+  <div class="ach-panel">
+    <div class="ach-panel-header">
+      <span style="font-family:'Cinzel Decorative',cursive;font-size:.9rem;color:var(--gold)">🎖️ Achievements</span>
+      <button class="dev-close" onclick="closeAchievements()">✕</button>
+    </div>
+    <div class="ach-progress" id="achProgress">Loading…</div>
+    <div class="ach-panel-body" id="achGrid"></div>
+  </div>
+</div>
 
 <!-- ── CONFIRM DIALOG (body-level, always accessible) ── -->
 <div class="confirm-overlay" id="confirmOverlay">
@@ -2823,13 +2911,7 @@ async function resetStats() {
 
 document.getElementById('statsOverlay').addEventListener('click', function(e){ if(e.target===this)closeStats(); });
 
-function updateBalance(){ 
-  document.getElementById('balanceDisplay').textContent=fmt(balance); 
-  saveState();
-}
-
-// Initial setup
-updateBalance();
+// Initial setup — balance display handled by animated updateBalance below
 
 // ── MODAL ──
 function openModal(){ document.getElementById('modalOverlay').classList.add('open'); document.getElementById('depositInput').focus(); }
@@ -4178,6 +4260,297 @@ document.getElementById('devOverlay').addEventListener('click', function(e) {
 });
 document.getElementById('devPwInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') devUnlock();
+});
+
+// ════════════════════════════════════════════════════════════
+//  ANIMATED BALANCE COUNTER
+// ════════════════════════════════════════════════════════════
+let _balAnimFrame = null;
+let _balDisplayed = 0;
+
+function updateBalance() {
+  saveState();
+  const target = balance;
+  const el = document.getElementById('balanceDisplay');
+  if (_balAnimFrame) cancelAnimationFrame(_balAnimFrame);
+  const start = _balDisplayed;
+  const diff = target - start;
+  if (Math.abs(diff) < 0.01) { el.textContent = fmt(target); _balDisplayed = target; return; }
+  const duration = Math.min(600, Math.max(200, Math.abs(diff) / Math.max(1, Math.abs(start)) * 400));
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const ease = 1 - Math.pow(1 - t, 3);
+    _balDisplayed = start + diff * ease;
+    el.textContent = fmt(_balDisplayed);
+    if (t < 1) _balAnimFrame = requestAnimationFrame(step);
+    else { _balDisplayed = target; el.textContent = fmt(target); }
+  }
+  _balAnimFrame = requestAnimationFrame(step);
+}
+
+// ════════════════════════════════════════════════════════════
+//  SOUND EFFECTS
+// ════════════════════════════════════════════════════════════
+let soundEnabled = localStorage.getItem('rc_sound') !== 'off';
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('rc_sound', soundEnabled ? 'on' : 'off');
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+  document.getElementById('soundBtn').style.opacity = soundEnabled ? '1' : '0.5';
+  toast(soundEnabled ? '🔊 Sound on' : '🔇 Sound off', '');
+}
+
+// Update icon on load
+document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+document.getElementById('soundBtn').style.opacity = soundEnabled ? '1' : '0.5';
+
+const _audioCtx = { ctx: null };
+function _getCtx() {
+  if (!_audioCtx.ctx) _audioCtx.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx.ctx;
+}
+
+function playSound(type) {
+  if (!soundEnabled) return;
+  try {
+    const ctx = _getCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    if (type === 'win') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(440, t);
+      o.frequency.setValueAtTime(550, t + 0.1);
+      o.frequency.setValueAtTime(660, t + 0.2);
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      o.start(t); o.stop(t + 0.5);
+    } else if (type === 'bigwin') {
+      o.type = 'sine';
+      [440,550,660,880].forEach((f, i) => o.frequency.setValueAtTime(f, t + i * 0.1));
+      g.gain.setValueAtTime(0.22, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+      o.start(t); o.stop(t + 0.8);
+    } else if (type === 'lose') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.3);
+    } else if (type === 'click') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(600, t);
+      g.gain.setValueAtTime(0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+      o.start(t); o.stop(t + 0.07);
+    } else if (type === 'flip') {
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(300, t);
+      o.frequency.setValueAtTime(500, t + 0.05);
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      o.start(t); o.stop(t + 0.15);
+    } else if (type === 'bomb') {
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(80, t);
+      o.frequency.exponentialRampToValueAtTime(40, t + 0.4);
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      o.start(t); o.stop(t + 0.4);
+    } else if (type === 'gem') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(800, t);
+      o.frequency.setValueAtTime(1000, t + 0.05);
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      o.start(t); o.stop(t + 0.15);
+    } else if (type === 'levelup') {
+      o.type = 'sine';
+      [523,659,784,1047].forEach((f,i) => o.frequency.setValueAtTime(f, t + i*0.12));
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+      o.start(t); o.stop(t + 0.7);
+    } else if (type === 'achievement') {
+      o.type = 'sine';
+      [659,784,880,1047].forEach((f,i) => o.frequency.setValueAtTime(f, t + i*0.1));
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+      o.start(t); o.stop(t + 0.55);
+    }
+  } catch(e) {}
+}
+
+// Hook sounds into toast
+const _origToast = toast;
+toast = function(msg, type) {
+  _origToast(msg, type);
+  if (type === 'win') playSound(msg.includes('💎') || msg.includes('🎰') ? 'bigwin' : 'win');
+  else if (type === 'lose') playSound('lose');
+};
+
+// Init balance display now that animated updateBalance is defined
+updateBalance();
+
+// ════════════════════════════════════════════════════════════
+//  SESSION TIMER
+// ════════════════════════════════════════════════════════════
+const _sessionStart = Date.now();
+setInterval(() => {
+  const s = Math.floor((Date.now() - _sessionStart) / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const el = document.getElementById('sessionTimer');
+  if (el) el.textContent = h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+    : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}, 1000);
+
+// ════════════════════════════════════════════════════════════
+//  ACHIEVEMENTS SYSTEM
+// ════════════════════════════════════════════════════════════
+const ACHIEVEMENTS = [
+  { id:'first_bet',    icon:'🎲', name:'First Bet',        desc:'Place your very first bet.',                    check: s => s.gamesPlayed >= 1 },
+  { id:'first_win',    icon:'🏆', name:'First Win',        desc:'Win your first game.',                          check: s => s.wins >= 1 },
+  { id:'veteran',      icon:'🎖️', name:'Veteran',          desc:'Play 100 games.',                               check: s => s.gamesPlayed >= 100 },
+  { id:'high_roller',  icon:'💰', name:'High Roller',      desc:'Wager over $1,000,000 total.',                  check: s => s.totalWagered >= 1_000_000 },
+  { id:'whale',        icon:'🐋', name:'Whale',            desc:'Wager over $1,000,000,000 total.',              check: s => s.totalWagered >= 1_000_000_000 },
+  { id:'profit_100k',  icon:'📈', name:'In the Money',     desc:'Reach $100,000 net profit.',                    check: s => s.netProfit >= 100_000 },
+  { id:'all_games',    icon:'🌟', name:'Game Explorer',    desc:'Play every single game at least once.',         check: s => Object.values(s.games).every(g => g.played >= 1) },
+  { id:'lucky_streak', icon:'🔥', name:'On Fire',          desc:'Win 10 games in a row (tracked this session).', check: () => _achStreak >= 10 },
+  { id:'mines_pro',    icon:'💣', name:'Mine Sweeper',     desc:'Play Mines 50 times.',                          check: s => (s.games.mines?.played||0) >= 50 },
+  { id:'bj_pro',       icon:'🃏', name:'Card Shark',       desc:'Play Blackjack 50 times.',                      check: s => (s.games.blackjack?.played||0) >= 50 },
+  { id:'crash_pro',    icon:'💀', name:'Crash Landing',    desc:'Play Crash 50 times.',                          check: s => (s.games.crash?.played||0) >= 50 },
+  { id:'level10',      icon:'⭐', name:'Rising Star',      desc:'Reach Level 10.',                               check: s => (s.level||1) >= 10 },
+  { id:'level50',      icon:'🌠', name:'Elite',            desc:'Reach Level 50.',                               check: s => (s.level||1) >= 50 },
+  { id:'ath_1m',       icon:'💎', name:'Diamond Hands',   desc:'Win $1,000,000 or more in a single game.',      check: s => s.globalAth >= 1_000_000 },
+  { id:'tipper',       icon:'💸', name:'Generous',         desc:'Send a tip to another player.',                 check: () => _achTipped },
+];
+
+// Session-only trackers (don't persist — intentional for streak/tip)
+let _achStreak = 0;
+let _achTipped = false;
+let _achUnlocked = new Set(JSON.parse(localStorage.getItem('rc_ach') || '[]'));
+
+function _achSave() {
+  localStorage.setItem('rc_ach', JSON.stringify([..._achUnlocked]));
+}
+
+function _achCheck() {
+  ACHIEVEMENTS.forEach(a => {
+    if (_achUnlocked.has(a.id)) return;
+    if (a.check(stats)) {
+      _achUnlocked.add(a.id);
+      _achSave();
+      _showAchToast(a);
+    }
+  });
+}
+
+function _showAchToast(a) {
+  playSound('achievement');
+  const el = document.createElement('div');
+  el.className = 'ach-toast';
+  el.innerHTML = `
+    <div class="ach-toast-icon">${a.icon}</div>
+    <div class="ach-toast-body">
+      <div class="ach-toast-title">Achievement Unlocked!</div>
+      <div class="ach-toast-name">${a.name}</div>
+      <div class="ach-toast-desc">${a.desc}</div>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function openAchievements() {
+  document.getElementById('achOverlay').classList.add('open');
+  _renderAchGrid();
+}
+function closeAchievements() { document.getElementById('achOverlay').classList.remove('open'); }
+document.getElementById('achOverlay').addEventListener('click', function(e) { if (e.target === this) closeAchievements(); });
+
+function _renderAchGrid() {
+  const grid = document.getElementById('achGrid');
+  const prog = document.getElementById('achProgress');
+  const unlocked = ACHIEVEMENTS.filter(a => _achUnlocked.has(a.id)).length;
+  prog.textContent = `${unlocked} / ${ACHIEVEMENTS.length} unlocked`;
+  grid.innerHTML = ACHIEVEMENTS.map(a => {
+    const done = _achUnlocked.has(a.id);
+    return `<div class="ach-card ${done ? 'unlocked' : ''}">
+      <div class="ach-card-icon">${a.icon}</div>
+      <div>
+        <div class="ach-card-name">${a.name}</div>
+        <div class="ach-card-desc">${a.desc}</div>
+        ${done ? '<div class="ach-card-badge">✓ Unlocked</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Hook achievements into trackGame
+const _origTrackGame2 = trackGame;
+trackGame = function(gameType, bet, payout, isWin) {
+  _origTrackGame2(gameType, bet, payout, isWin);
+  if (isWin) _achStreak++; else _achStreak = 0;
+  _achCheck();
+  // Sound hooks
+  const mult = bet > 0 ? payout / bet : 0;
+  if (isWin) playSound(mult >= 10 ? 'bigwin' : 'win');
+  else playSound('lose');
+};
+
+// Hook tip achievement
+const _origDoTip = doTip;
+doTip = async function() {
+  await _origDoTip();
+  _achTipped = true;
+  _achCheck();
+};
+
+// Hook level-up sound
+const _origShowLevelUpToast = showLevelUpToast;
+showLevelUpToast = function(lvl) {
+  _origShowLevelUpToast(lvl);
+  playSound('levelup');
+};
+
+// Hook mines gem/bomb sounds
+const _origMinesClick = window.minesClick;
+window.minesClick = function(i) {
+  _origMinesClick(i);
+  // Sound is triggered by whether it was a gem or bomb (check class after render)
+  setTimeout(() => {
+    const cell = document.querySelector(`.mine-cell[data-i="${i}"]`);
+    if (cell) {
+      if (cell.classList.contains('gem')) playSound('gem');
+      else if (cell.classList.contains('bomb')) playSound('bomb');
+    }
+  }, 20);
+};
+
+// Check achievements on startup (for any already met from saved stats)
+setTimeout(_achCheck, 1500);
+
+// ════════════════════════════════════════════════════════════
+//  KEYBOARD HOTKEYS
+// ════════════════════════════════════════════════════════════
+document.addEventListener('keydown', function(e) {
+  // Don't fire when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const map = {
+    '1': 'lobby', '2': 'mines', '3': 'tower', '4': 'roulette',
+    '5': 'blackjack', '6': 'coinflip', '7': 'keno', '8': 'plinko',
+    '9': 'slots', '0': 'crash',
+    'm': 'mines', 't': 'tower', 'r': 'roulette', 'b': 'blackjack',
+    'c': 'coinflip', 'k': 'keno', 'p': 'plinko', 'd': 'dice',
+    'h': 'hilo', 'w': 'wheel', 's': 'slots',
+  };
+  if (map[e.key]) showTab(map[e.key]);
 });
 
 // ════════════════════════════════════════════════════════════
