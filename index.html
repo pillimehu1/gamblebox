@@ -2122,6 +2122,7 @@ async function resetStats() {
   if (!ok) return;
   stats = { 
     gamesPlayed: 0, wins: 0, netProfit: 0, totalWagered: 0, globalAth: 0, globalAtl: 0,
+    xp: 0, level: 1,
     games: {
       mines: { played: 0, wagered: 0 },
       tower: { played: 0, wagered: 0 },
@@ -2813,7 +2814,7 @@ window.bjReveal = function() {
   
   if (type==='win') { toast('🏆 Won '+fmt(payout)+'!','win'); trackGame('blackjack', bjBet, payout, true); }
   else if (type==='lose') { toast('❌ Lost '+fmt(bjBet),'lose'); trackGame('blackjack', bjBet, 0, false); }
-  else { toast('🤝 Push — bet returned',''); trackGame('blackjack', bjBet, bjBet, false); }
+  else { toast('🤝 Push — bet returned',''); /* push: no win, no loss recorded */ stats.gamesPlayed++; stats.totalWagered += bjBet; if(stats.games.blackjack){ stats.games.blackjack.played++; stats.games.blackjack.wagered += bjBet; } saveState(); }
 };
 
 bjSetControls('deal');
@@ -3210,7 +3211,8 @@ function plinkoDrop() {
     trackGame('plinko', bet, payout, payout > bet);
     
     if(payout > bet) toast(`Hit ${mults[resultIdx]}x! Won ${fmt(payout)}`, 'win');
-    else toast(`Hit ${mults[resultIdx]}x.`, 'lose');
+    else if(payout === bet) toast(`Hit ${mults[resultIdx]}x. Break even.`, '');
+    else toast(`Hit ${mults[resultIdx]}x. Lost ${fmt(bet - payout)}.`, 'lose');
     
     btn.disabled = false;
     document.getElementById('plinkoBet').disabled = false;
@@ -3459,7 +3461,7 @@ async function loadWinsFeed() {
         <div class="wf-game">${GAME_ICONS[w.game_type] || '🎰'}</div>
         <div class="wf-info">
           <div class="wf-user">${w.username}</div>
-          <div class="wf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier</div>
+          <div class="wf-detail">${w.game_type.charAt(0).toUpperCase()+w.game_type.slice(1)} · ${(w.payout/w.bet).toFixed(2)}× multiplier · ${timeAgo(new Date(w.created_at))}</div>
         </div>
         <div class="wf-amt">+${fmt(w.payout - w.bet)}</div>
       </div>
@@ -3479,7 +3481,7 @@ trackGame = function(gameType, bet, payout, isWin) {
     || DEV.cfForce !== 'random' || DEV.kenoForce !== 'random'
     || DEV.plinkoForce !== 'random';
   if (devActive) return;
-  if (isWin && payout >= bet * 2) {
+  if (isWin && payout >= bet * 5) {
     const username = currentUser?._username || null;
     pushWinToFeed(gameType, username, bet, payout);
   }
@@ -3653,10 +3655,14 @@ async function onAuthSuccess(user) {
   loadWinsFeed();
 }
 
-// ── SAVE TO SUPABASE ──
+// ── SAVE TO SUPABASE (debounced — waits 1.5s after last call) ──
+let _saveTimer = null;
 async function saveBalanceToSupabase() {
   if (!currentUser || isGuest) return;
-  await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    await sb.from('users').upsert({ id: currentUser.id, email: currentUser.email, balance: balance, stats: JSON.stringify(stats), dev_password: devPassword });
+  }, 1500);
 }
 
 // ── PATCH updateBalance to sync Supabase + level UI ──
@@ -3716,8 +3722,9 @@ async function doSetUsername() {
   const un = document.getElementById('profileUsernameInput').value.trim();
   const msg = document.getElementById('profileUsernameMsg');
   msg.textContent = ''; msg.className = 'profile-msg';
-  if (!un || un.length < 3) { msg.textContent = 'At least 3 characters.'; msg.className = 'profile-msg err'; return; }
+  if (!un || un.length < 3 || un.length > 20) { msg.textContent = 'Username must be 3–20 characters.'; msg.className = 'profile-msg err'; return; }
   if (!/^[a-zA-Z0-9_]+$/.test(un)) { msg.textContent = 'Letters, numbers and underscores only.'; msg.className = 'profile-msg err'; return; }
+  if (/^_|_$/.test(un)) { msg.textContent = 'Username cannot start or end with an underscore.'; msg.className = 'profile-msg err'; return; }
   msg.textContent = 'Checking…'; msg.className = 'profile-msg';
   const { data: existing } = await sb.from('users').select('id').eq('username', un).single();
   if (existing) { msg.textContent = 'Username already taken.'; msg.className = 'profile-msg err'; return; }
@@ -3829,16 +3836,23 @@ function xpForLevel(n) {
   return Math.floor(6e30 * Math.pow(n / 1000, 8));
 }
 
+const _xpCache = new Map();
 function totalXpForLevel(n) {
+  if (_xpCache.has(n)) return _xpCache.get(n);
   let total = 0;
   for (let i = 1; i < n; i++) total += xpForLevel(i);
+  _xpCache.set(n, total);
   return total;
 }
 
 function getLevelFromXp(xp) {
-  let lvl = 1;
-  while (xp >= totalXpForLevel(lvl + 1) && lvl < 10000) lvl++;
-  return lvl;
+  let lo = 1, hi = 10000;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (totalXpForLevel(mid) <= xp) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
 }
 
 function getXpProgress(xp) {
@@ -3933,14 +3947,17 @@ async function loadLb(tab) {
     return;
   }
 
-  let rows = data.map(u => ({
-    username: u.username,
-    balance: parseFloat(u.balance) || 0,
-    wagered: u.wagered || 0,
-    wins: u.wins || 0,
-    level: u.level || 1,
-    xp: u.xp || 0
-  }));
+  let rows = data.map(u => {
+    const xp = parseFloat(u.xp) || 0;
+    return {
+      username: u.username,
+      balance: parseFloat(u.balance) || 0,
+      wagered: parseFloat(u.wagered) || 0,
+      wins: parseInt(u.wins) || 0,
+      xp,
+      level: getLevelFromXp(xp)
+    };
+  });
 
   const myUsername = currentUser?._username;
   // Find my rank
@@ -4043,8 +4060,9 @@ async function checkDailyBonus() {
   // Use fresh server balance to avoid overwriting with stale local value
   const freshBalance = parseFloat(data.balance) || balance;
   balance = freshBalance + bonus;
+  // Update display without triggering another Supabase save (we do it below)
+  document.getElementById('balanceDisplay').textContent = fmt(balance);
   await sb.from('users').upsert({ id: currentUser.id, last_bonus_at: now.toISOString(), balance: balance });
-  updateBalance();
 
   // Show bonus toast
   const el = document.createElement('div');
@@ -4082,9 +4100,9 @@ async function checkDailyBonus() {
     }
   });
 
-  // Load wins feed now that sb is ready, refresh every 30s
+  // Load wins feed now that sb is ready, refresh every 30s only when tab is visible
   loadWinsFeed();
-  setInterval(loadWinsFeed, 30000);
+  setInterval(() => { if (!document.hidden) loadWinsFeed(); }, 30000);
 })();
 </script>
 </body>
