@@ -1736,8 +1736,8 @@
       <div class="bet-row">
         <span class="bet-label" style="min-width:80px">Difficulty</span>
         <select class="bet-input" id="towerDiff" style="width:140px">
-          <option value="easy">Easy (3 tiles, 1 bomb)</option>
-          <option value="medium" selected>Medium (3 tiles, 2 bombs)</option>
+          <option value="easy">Easy (4 tiles, 1 bomb)</option>
+          <option value="medium" selected>Medium (3 tiles, 1 bomb)</option>
           <option value="hard">Hard (2 tiles, 1 bomb)</option>
           <option value="expert">Expert (3 tiles, 2 bombs)</option>
         </select>
@@ -2251,8 +2251,8 @@ let towerActive=false, towerFloor=0, towerBombMap=[], towerMults=[];
 let currentTowerBet=0;
 
 const TOWER_CONFIGS={
-  easy:{cols:3,bombs:1},
-  medium:{cols:3,bombs:2},
+  easy:{cols:4,bombs:1},
+  medium:{cols:3,bombs:1},
   hard:{cols:2,bombs:1},
   expert:{cols:3,bombs:2}
 };
