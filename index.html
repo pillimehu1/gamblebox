@@ -4490,7 +4490,7 @@ function _plinkoDropOneBall(bet, rows, mults, board, onDone) {
 // ════════════════════════════════════════════════════════════
 //  DEV PANEL (Extended Variables)
 // ════════════════════════════════════════════════════════════
-let devPassword = 'admin'; // loaded from Supabase after auth
+let devPassword = 'admin'; // session-only — NOT persisted to DB
 let devUnlockedState = false;
 let devInfiniteBalance = false;
 
@@ -4615,12 +4615,9 @@ function devChangePw() {
   const np = document.getElementById('devNewPw').value.trim();
   if (!np) { document.getElementById('devPwChangeMsg').textContent = '⚠ Enter a new password.'; return; }
   devPassword = np;
-  // Save immediately — bypass debounce so password isn't lost on quick close
-  if (currentUser && !isGuest) {
-    sb.from('users').update({ dev_password: devPassword }).eq('id', currentUser.id);
-  }
+  // Password is session-only — NOT saved to DB for security
   document.getElementById('devNewPw').value = '';
-  document.getElementById('devPwChangeMsg').textContent = '✓ Password updated!';
+  document.getElementById('devPwChangeMsg').textContent = '✓ Password updated (this session only)!';
   setTimeout(() => { let msg = document.getElementById('devPwChangeMsg'); if(msg) msg.textContent = ''; }, 2500);
 }
 
@@ -5940,7 +5937,7 @@ async function doLogout() {
   }
   // Force immediate save (bypass debounce) before signing out
   clearTimeout(_saveTimer);
-  await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats), dev_password: devPassword }).eq('id', currentUser.id);
+  await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats) }).eq('id', currentUser.id);
   await sb.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
@@ -5972,7 +5969,7 @@ async function onAuthSuccess(user) {
   let isNewUser = false;
   const { data, error } = await sb
     .from('users')
-    .select('balance, stats, dev_password, username, avatar, betting_disabled, temp_dev_until')
+    .select('balance, stats, username, avatar, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
 
@@ -5986,7 +5983,7 @@ async function onAuthSuccess(user) {
   if (data && !error) {
     // ── Existing user — restore everything from DB ──
     balance = (data.balance !== null && data.balance !== undefined) ? parseFloat(data.balance) : 0;
-    if (data.dev_password) devPassword = data.dev_password;
+    // dev_password is NOT loaded from DB — it's session-only for security
     if (data.stats) {
       try {
         const loaded = typeof data.stats === 'string' ? JSON.parse(data.stats) : data.stats;
@@ -6025,14 +6022,15 @@ async function onAuthSuccess(user) {
       isNewUser = true;
       balance = 1000;
       stats = DEFAULT_STATS();
-      devPassword = 'admin';
+      // Generate a random dev password — never store it in DB, user must note it from the panel
+      devPassword = Math.random().toString(36).slice(2, 10).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
       const pendingUsername = window._pendingUsername || null;
       window._pendingUsername = null;
       currentUser._username = pendingUsername;
       currentUser._usernameSet = !!pendingUsername;
       await sb.from('users').upsert({
         id: user.id, email: user.email, balance: balance,
-        stats: JSON.stringify(stats), dev_password: devPassword,
+        stats: JSON.stringify(stats),
         username: pendingUsername, username_set: !!pendingUsername
       });
       const chipLabel = pendingUsername || user.email.split('@')[0];
@@ -6076,7 +6074,7 @@ async function saveBalanceToSupabase() {
   if (!currentUser || isGuest) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async () => {
-    await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats), dev_password: devPassword }).eq('id', currentUser.id);
+    await sb.from('users').update({ balance: balance, stats: JSON.stringify(stats) }).eq('id', currentUser.id);
   }, 1500);
 }
 
@@ -6492,25 +6490,17 @@ document.getElementById('tipLogOverlay').addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════
 async function checkDailyBonus() {
   if (!currentUser || isGuest) return;
-  const { data } = await sb.from('users').select('last_bonus_at, balance').eq('id', currentUser.id).single();
-  if (!data) return;
-  const last = data.last_bonus_at ? new Date(data.last_bonus_at) : null;
-  const now = new Date();
-  const diffHours = last ? (now - last) / 36e5 : 999;
-  if (diffHours < 24) return; // Already claimed today
-
   const level = getLevelFromXp(stats.xp || 0);
   const bonus = Math.max(100, Math.floor(100 * Math.pow(level, 1.3)));
-  const freshBalance = parseFloat(data.balance) || balance;
-  balance = freshBalance + bonus;
-  document.getElementById('balanceDisplay').textContent = fmt(balance);
-  clearTimeout(_saveTimer);
-  await sb.from('users').update({
-    balance: balance,
-    last_bonus_at: now.toISOString()
-  }).eq('id', currentUser.id);
 
-  // Show bonus toast
+  // Use server-side RPC to atomically check+award bonus — prevents double-claiming
+  const { data: rpcData, error } = await sb.rpc('claim_daily_bonus', { p_bonus: bonus });
+  if (error || !rpcData || rpcData === false) return; // Already claimed or error
+
+  // RPC returned the new balance
+  balance = parseFloat(rpcData);
+  document.getElementById('balanceDisplay').textContent = fmt(balance);
+
   const el = document.createElement('div');
   el.className = 'bonus-toast';
   el.innerHTML = `🎁 Daily Bonus! +${fmt(bonus)} (Level ${level} reward)`;
@@ -6521,23 +6511,27 @@ async function checkDailyBonus() {
 
 // ════════════════════════════════════════════════════════════
 //  ADMIN SYSTEM
-//  Add your Supabase user ID(s) here to grant admin access
+//  Admin/owner status is loaded from the DB (is_admin / is_owner columns).
+//  No IDs are hardcoded in source for security.
 // ════════════════════════════════════════════════════════════
-const OWNER_ID = 'b8b04d1d-77c5-41f0-815e-bc60b5247709';
-let ADMIN_IDS = [
-  'b8b04d1d-77c5-41f0-815e-bc60b5247709'
-];
+const OWNER_ID = null; // Loaded from DB — not hardcoded
+let ADMIN_IDS = [];    // Populated via loadAdminIdsFromDB()
 
-function isOwner() { return currentUser && currentUser.id === OWNER_ID; }
-function isAdmin() { return currentUser && (ADMIN_IDS.includes(currentUser.id) || currentUser.id === OWNER_ID); }
+function isOwner() { return currentUser && !!currentUser._isOwner; }
+function isAdmin() { return currentUser && (!!currentUser._isAdmin || !!currentUser._isOwner); }
 
-// Load admin IDs from DB on boot — keeps in sync with adds/removes without needing code redeploy
+// Load admin/owner status from DB — never trust client-side IDs
 async function loadAdminIdsFromDB() {
+  if (!currentUser) return;
+  const { data: myRow } = await sb.from('users').select('is_admin, is_owner').eq('id', currentUser.id).single();
+  if (myRow) {
+    currentUser._isAdmin = !!myRow.is_admin;
+    currentUser._isOwner = !!myRow.is_owner;
+  }
+  // Also build ADMIN_IDS list for legacy compatibility
   const { data } = await sb.from('users').select('id').eq('is_admin', true);
   if (data && data.length) {
-    const dbIds = data.map(r => r.id);
-    // Merge with hardcoded list — always keep OWNER_ID and hardcoded admins
-    ADMIN_IDS = [...new Set([...ADMIN_IDS, ...dbIds])];
+    ADMIN_IDS = data.map(r => r.id);
   }
 }
 
