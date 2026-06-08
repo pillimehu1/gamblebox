@@ -46,26 +46,42 @@
     background:rgba(5,5,8,0.97);
     border-bottom:1px solid var(--border);
     backdrop-filter:blur(12px);
-    padding:10px 14px 8px;
-    display:flex; flex-direction:column; gap:8px;
+    padding:10px 14px;
   }
   .header-top {
     display:flex; align-items:center; justify-content:space-between;
+    gap:8px;
   }
-  .header-bottom {
-    display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow-x:auto;
-    scrollbar-width:none;
+  .header-center {
+    position:absolute; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:8px;
   }
-  .header-bottom::-webkit-scrollbar { display:none; }
+  .header-right {
+    display:flex; align-items:center; gap:6px; margin-left:auto;
+  }
   .logo {
+    display:flex; align-items:center; gap:7px; flex-shrink:0; cursor:default;
+  }
+  .logo-icon {
+    font-size:1.4rem; line-height:1;
+    filter:drop-shadow(0 0 6px rgba(240,192,64,.7));
+  }
+  .logo-text {
     font-family:'Cinzel Decorative',cursive;
-    font-size:1.05rem;
-    background:linear-gradient(135deg,#f0c040,#ffd700,#f0a000);
+    font-size:1.15rem;
+    background:linear-gradient(135deg,#f0c040 0%,#ffd700 45%,#f0a000 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    letter-spacing:1px; white-space:nowrap;
+    letter-spacing:1.5px; white-space:nowrap;
+    text-shadow:none;
+    filter:drop-shadow(0 0 8px rgba(240,192,64,.35));
+  }
+  .logo-suits {
+    font-size:.6rem; color:rgba(240,192,64,.45);
+    letter-spacing:2px; display:block; margin-top:-2px;
+    font-family:'Rajdhani',sans-serif;
   }
   .balance-box {
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center;
     background:var(--card);
     border:1px solid var(--border);
     border-radius:10px;
@@ -76,27 +92,98 @@
   .balance-amount {
     font-size:1.1rem; font-weight:700;
     color:var(--gold);
-    min-width:70px; text-align:right;
+    min-width:70px; text-align:center;
   }
-  /* Icon-only header buttons */
-  .hdr-btn {
-    display:flex; align-items:center; justify-content:center;
-    border-radius:9px; border:1px solid; cursor:pointer;
-    font-size:.95rem; width:36px; height:36px; flex-shrink:0;
-    transition:all .2s; background:transparent;
-    font-family:'Rajdhani',sans-serif; font-weight:700;
-  }
+  /* Add Funds button */
   .hdr-btn-add {
-    background:linear-gradient(135deg,#f0c040,#f0a000);
-    border-color:transparent; color:#000;
-    width:auto; padding:0 12px; font-size:.8rem;
-    letter-spacing:.5px; height:36px;
+    display:flex; align-items:center; gap:5px;
+    background:transparent;
+    border:1px solid rgba(240,192,64,.5);
+    color:var(--gold);
+    padding:0 13px; font-size:.78rem; font-family:'Rajdhani',sans-serif;
+    font-weight:700; letter-spacing:.8px; height:36px; text-transform:uppercase;
+    border-radius:9px; cursor:pointer; flex-shrink:0; white-space:nowrap;
+    transition:all .2s;
   }
-  .hdr-btn-stats { border-color:rgba(0,176,255,.35); color:rgba(0,176,255,.7); }
-  .hdr-btn-stats:hover { border-color:var(--blue); color:var(--blue); }
-  .hdr-btn-dev { border-color:rgba(213,0,249,.35); color:rgba(213,0,249,.6); }
-  .hdr-btn-dev:hover { border-color:var(--purple); color:var(--purple); }
-  .hdr-btn-add:hover { opacity:.88; transform:scale(1.03); }
+  .hdr-btn-add:hover {
+    background:rgba(240,192,64,.1);
+    border-color:var(--gold);
+    box-shadow:0 0 12px rgba(240,192,64,.2);
+  }
+  /* Drawer toggle arrow button */
+  .drawer-toggle {
+    width:36px; height:36px; border-radius:9px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); font-size:1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0;
+  }
+  .drawer-toggle:hover { border-color:var(--gold); color:var(--gold); }
+  .drawer-toggle.open { border-color:var(--gold); color:var(--gold); transform:rotate(180deg); }
+
+  /* ── SIDE DRAWER ── */
+  .drawer-backdrop {
+    display:none; position:fixed; inset:0; z-index:199;
+    background:rgba(0,0,0,.45); backdrop-filter:blur(2px);
+  }
+  .drawer-backdrop.open { display:block; }
+  .side-drawer {
+    position:fixed; top:0; right:0; bottom:0; z-index:200;
+    width:230px; background:#0d0d18;
+    border-left:1px solid var(--border);
+    display:flex; flex-direction:column;
+    transform:translateX(100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+    box-shadow:-8px 0 32px rgba(0,0,0,.5);
+  }
+  .side-drawer.open { transform:translateX(0); }
+  .drawer-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .drawer-title {
+    font-family:'Cinzel Decorative',cursive; font-size:.85rem;
+    background:linear-gradient(135deg,#f0c040,#ffd700);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .drawer-close {
+    background:none; border:none; color:var(--muted);
+    font-size:1rem; cursor:pointer; padding:4px;
+    transition:color .15s;
+  }
+  .drawer-close:hover { color:#fff; }
+  .drawer-body {
+    flex:1; overflow-y:auto; padding:12px 12px 20px;
+    display:flex; flex-direction:column; gap:4px;
+    scrollbar-width:none;
+  }
+  .drawer-body::-webkit-scrollbar { display:none; }
+  .drawer-section-label {
+    font-size:.65rem; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--muted); padding:8px 6px 4px; font-weight:600;
+  }
+  .drawer-btn {
+    display:flex; align-items:center; gap:10px;
+    width:100%; padding:10px 12px;
+    background:transparent; border:1px solid transparent;
+    border-radius:9px; color:#d0d0e0; font-family:'Rajdhani',sans-serif;
+    font-size:.9rem; font-weight:600; cursor:pointer; text-align:left;
+    transition:all .15s;
+  }
+  .drawer-btn:hover { background:rgba(255,255,255,.05); border-color:var(--border); color:#fff; }
+  .drawer-btn-dev { color:rgba(213,0,249,.8); }
+  .drawer-btn-dev:hover { border-color:rgba(213,0,249,.4); background:rgba(213,0,249,.07); }
+  .drawer-btn-admin { color:var(--red); }
+  .drawer-btn-admin:hover { border-color:rgba(255,23,68,.4); background:rgba(255,23,68,.07); }
+  .drawer-divider { height:1px; background:var(--border); margin:8px 0; }
+  .drawer-session {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--border); border-radius:9px;
+  }
 
   /* ── DEV PANEL OVERLAY ── */
   .dev-overlay {
@@ -923,11 +1010,42 @@
   }
   .profile-panel-body { padding:24px 28px 28px; }
   .profile-avatar {
-    width:72px; height:72px; border-radius:50%;
-    background:linear-gradient(135deg,#f0c040,#f0a000);
+    width:80px; height:80px; border-radius:50%;
+    background:linear-gradient(135deg,#1a1a2e,#0e0e1a);
+    border:2px solid rgba(240,192,64,.4);
     display:flex; align-items:center; justify-content:center;
-    font-size:2rem; margin:0 auto 16px; font-weight:900; color:#000;
+    font-size:2.4rem; margin:0 auto 8px;
+    cursor:pointer; transition:border-color .2s, box-shadow .2s;
+    position:relative; box-shadow:0 0 16px rgba(240,192,64,.1);
   }
+  .profile-avatar:hover { border-color:var(--gold); box-shadow:0 0 20px rgba(240,192,64,.25); }
+  .profile-avatar-edit-hint {
+    font-size:.6rem; color:var(--muted); text-align:center;
+    margin-bottom:14px; letter-spacing:.5px;
+  }
+  /* Avatar picker grid */
+  .avatar-picker {
+    display:none; margin-bottom:18px;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--border); border-radius:14px;
+    padding:14px;
+  }
+  .avatar-picker.open { display:block; }
+  .avatar-picker-title {
+    font-size:.65rem; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--muted); margin-bottom:10px; font-weight:600;
+  }
+  .avatar-grid {
+    display:grid; grid-template-columns:repeat(7,1fr); gap:8px;
+  }
+  .avatar-opt {
+    aspect-ratio:1; border-radius:10px; border:2px solid transparent;
+    background:rgba(255,255,255,.04); display:flex; align-items:center;
+    justify-content:center; font-size:1.4rem; cursor:pointer;
+    transition:all .15s;
+  }
+  .avatar-opt:hover { background:rgba(255,255,255,.09); border-color:rgba(240,192,64,.4); }
+  .avatar-opt.selected { border-color:var(--gold); background:rgba(240,192,64,.1); box-shadow:0 0 8px rgba(240,192,64,.2); }
   .profile-name {
     font-family:'Cinzel Decorative',cursive;
     font-size:1rem; color:var(--gold);
@@ -1626,36 +1744,59 @@
 <!-- ── HEADER ── -->
 <header>
   <div class="header-top">
-    <div class="logo">♠ Royal Casino</div>
-    <div class="balance-box">
+    <div class="logo">
+      <span class="logo-icon">♠</span>
       <div>
-        <div class="balance-label">Balance</div>
-        <div class="balance-amount" id="balanceDisplay">$0.00</div>
-      </div>
-      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px;"></div>
-      <div>
-        <div class="balance-label">Session</div>
-        <div class="session-timer" id="sessionTimer">00:00</div>
+        <span class="logo-text">Royal Casino</span>
+        <span class="logo-suits">♠ ♥ ♦ ♣</span>
       </div>
     </div>
-  </div>
-  <div class="header-bottom">
-    <button class="hdr-btn hdr-btn-stats" onclick="openStats()" title="Stats">📊</button>
-    <button class="hdr-btn hdr-btn-lb" onclick="openLeaderboard()" title="Leaderboard">🏆</button>
-    <button class="hdr-btn" onclick="openAchievements()" title="Achievements" id="achBtn" style="border-color:rgba(240,192,64,.35);color:rgba(240,192,64,.7);">🎖️</button>
-    <button class="hdr-btn hdr-btn-tips" onclick="openTipLog()" title="Tip Log">💸</button>
-    <button class="hdr-btn" style="border-color:rgba(0,176,255,.35);color:rgba(0,176,255,.7);" onclick="openPF()" title="Provably Fair">🔐</button>
-    <button class="hdr-btn" id="soundBtn" onclick="toggleSound()" title="Sound" style="border-color:rgba(0,230,118,.35);color:rgba(0,230,118,.7);">🔊</button>
-    <button class="hdr-btn hdr-btn-dev" id="devBtn" onclick="openDev()" title="Dev Panel">⚙️</button>
-    <button class="hdr-btn" id="adminBtn" onclick="openAdmin()" title="Admin Panel" style="display:none;border-color:rgba(255,23,68,.4);color:var(--red);">👑</button>
-    <button class="hdr-btn hdr-btn-add" onclick="openModal()">+ Add Funds</button>
-    <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
-      <span>👤</span>
-      <span class="user-chip-name" id="userChipLabel">Profile</span>
-      <span style="font-size:.65rem;color:var(--muted)">▾</span>
+    <div class="header-center">
+      <div class="balance-box">
+        <div>
+          <div class="balance-label">Balance</div>
+          <div class="balance-amount" id="balanceDisplay">$0.00</div>
+        </div>
+      </div>
+      <button class="hdr-btn-add" onclick="openModal()">＋ Add Funds</button>
+    </div>
+    <div class="header-right">
+      <div class="user-chip" id="userChip" style="display:none" onclick="openProfile()">
+        <span>👤</span>
+        <span class="user-chip-name" id="userChipLabel">Profile</span>
+      </div>
+      <button class="drawer-toggle" id="drawerToggle" onclick="toggleDrawer()" title="Menu">▾</button>
     </div>
   </div>
 </header>
+
+<!-- ── SIDE DRAWER ── -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<div class="side-drawer" id="sideDrawer">
+  <div class="drawer-header">
+    <span class="drawer-title">Menu</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section-label">General</div>
+    <button class="drawer-btn" onclick="openStats();closeDrawer()">📊 Stats</button>
+    <button class="drawer-btn" onclick="openLeaderboard();closeDrawer()">🏆 Leaderboard</button>
+    <button class="drawer-btn" onclick="openAchievements();closeDrawer()">🎖️ Achievements</button>
+    <button class="drawer-btn" onclick="openTipLog();closeDrawer()">💸 Tip Log</button>
+    <button class="drawer-btn" onclick="openPF();closeDrawer()">🔐 Provably Fair</button>
+    <button class="drawer-btn" id="drawerSoundBtn" onclick="toggleSound();updateDrawerSound()">🔊 Sound</button>
+    <div class="drawer-divider"></div>
+    <div class="drawer-section-label" id="drawerAdminLabel" style="display:none">Admin</div>
+    <button class="drawer-btn drawer-btn-dev" id="drawerDevBtn" style="display:none" onclick="openDev();closeDrawer()">⚙️ Dev Panel</button>
+    <button class="drawer-btn drawer-btn-admin" id="drawerAdminBtn" style="display:none" onclick="openAdmin();closeDrawer()">👑 Admin Panel</button>
+    <div class="drawer-divider" id="drawerAdminDivider" style="display:none"></div>
+    <div class="drawer-section-label">Session</div>
+    <div class="drawer-session">
+      <span class="balance-label">Session Time</span>
+      <span class="session-timer" id="sessionTimer">00:00</span>
+    </div>
+  </div>
+</div>
 
 <!-- ── TOAST ── -->
 <div id="toast"></div>
@@ -1812,7 +1953,15 @@
 
     <!-- SCROLLABLE BODY -->
     <div class="profile-panel-body">
-      <div class="profile-avatar" id="profileAvatar">♠</div>
+      <div class="profile-avatar" id="profileAvatar" onclick="toggleAvatarPicker()" title="Change avatar">♠</div>
+      <div class="profile-avatar-edit-hint">tap to change avatar</div>
+
+      <!-- AVATAR PICKER -->
+      <div class="avatar-picker" id="avatarPicker">
+        <div class="avatar-picker-title">Choose your avatar</div>
+        <div class="avatar-grid" id="avatarGrid"></div>
+      </div>
+
       <div class="profile-name" id="profileName"></div>
       <div style="text-align:center;margin-bottom:4px;" id="profileLevelBadge"></div>
       <div class="xp-bar-wrap" id="profileXpBarWrap" style="margin:8px 20px 0;">
@@ -4585,14 +4734,14 @@ let soundEnabled = localStorage.getItem('rc_sound') !== 'off';
 function toggleSound() {
   soundEnabled = !soundEnabled;
   localStorage.setItem('rc_sound', soundEnabled ? 'on' : 'off');
-  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-  document.getElementById('soundBtn').style.opacity = soundEnabled ? '1' : '0.5';
+  document.getElementById('drawerSoundBtn').innerHTML = (soundEnabled ? '🔊' : '🔇') + ' Sound';
+  document.getElementById('drawerSoundBtn').style.opacity = soundEnabled ? '1' : '0.5';
   toast(soundEnabled ? '🔊 Sound on' : '🔇 Sound off', '');
 }
 
 // Update icon on load
-document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-document.getElementById('soundBtn').style.opacity = soundEnabled ? '1' : '0.5';
+document.getElementById('drawerSoundBtn').innerHTML = (soundEnabled ? '🔊' : '🔇') + ' Sound';
+document.getElementById('drawerSoundBtn').style.opacity = soundEnabled ? '1' : '0.5';
 
 const _audioCtx = { ctx: null };
 function _getCtx() {
@@ -5767,7 +5916,7 @@ function doGuestLogin() {
   document.getElementById('rcLoadingScreen').style.display = 'none';
   document.getElementById('userChip').style.display = 'flex';
   document.getElementById('userChipLabel').textContent = '🎲 Guest';
-  document.getElementById('devBtn').style.display = 'none';
+  document.getElementById('drawerDevBtn').style.display = 'none';
   updateBalance(); updateStatsUI(); updateLevelUI();
   toast('🎲 Playing as Guest — good luck!', 'win');
 }
@@ -5783,7 +5932,7 @@ async function doLogout() {
     isGuest = false; currentUser = null; balance = 0; stats = DEFAULT_STATS();
     clearTimeout(_saveTimer);
     document.getElementById('userChip').style.display = 'none';
-    document.getElementById('devBtn').style.display = 'none';
+    document.getElementById('drawerDevBtn').style.display = 'none';
     document.getElementById('authOverlay').classList.remove('hidden');
     document.getElementById('loginError').textContent = '';
     return;
@@ -5794,8 +5943,8 @@ async function doLogout() {
   await sb.auth.signOut();
   currentUser = null;
   document.getElementById('userChip').style.display = 'none';
-  document.getElementById('adminBtn').style.display = 'none';
-  document.getElementById('devBtn').style.display = 'none';
+  document.getElementById('drawerAdminBtn').style.display = 'none';
+  document.getElementById('drawerDevBtn').style.display = 'none';
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
@@ -5847,7 +5996,7 @@ async function onAuthSuccess(user) {
   _dbg('Fetching user row from DB...');
   const { data, error } = await sb
     .from('users')
-    .select('balance, stats, dev_password, username, betting_disabled, temp_dev_until')
+    .select('balance, stats, dev_password, username, avatar, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
 
@@ -5878,24 +6027,26 @@ async function onAuthSuccess(user) {
       stats = DEFAULT_STATS();
     }
     currentUser._username = data.username || null;
+    currentUser._avatar = data.avatar || '♠';
     currentUser._usernameSet = usernameSet || !!(data.username);
     currentUser._bettingDisabled = data.betting_disabled || false;
     const tempDevUntil = data.temp_dev_until ? new Date(data.temp_dev_until) : null;
     currentUser._hasTempDev = tempDevUntil && tempDevUntil > new Date();
     const chipLabel = data.username || user.email.split('@')[0];
-    document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
+    document.getElementById('userChipLabel').textContent = (data.avatar || '♠') + ' ' + chipLabel;
   } else {
     // ── No row found — truly new user ──
     // SAFETY: before writing anything, double-check the row really doesn't exist.
     // This prevents overwriting real data if the first query failed due to RLS/network.
-    const { data: safeCheck } = await sb.from('users').select('id, balance, username, username_set').eq('id', user.id).single();
+    const { data: safeCheck } = await sb.from('users').select('id, balance, username, username_set, avatar').eq('id', user.id).single();
     if (safeCheck) {
       // Row exists — first query must have errored (RLS, missing col, etc). Restore from safeCheck.
       balance = (safeCheck.balance !== null && safeCheck.balance !== undefined) ? parseFloat(safeCheck.balance) : 0;
       currentUser._username = safeCheck.username || null;
+      currentUser._avatar = safeCheck.avatar || '♠';
       currentUser._usernameSet = safeCheck.username_set || !!(safeCheck.username);
       const chipLabel = safeCheck.username || user.email.split('@')[0];
-      document.getElementById('userChipLabel').textContent = '👤 ' + chipLabel;
+      document.getElementById('userChipLabel').textContent = (safeCheck.avatar || '♠') + ' ' + chipLabel;
     } else {
       // Genuinely new user — create their row
       isNewUser = true;
@@ -5923,9 +6074,18 @@ async function onAuthSuccess(user) {
   updateBalance(); updateStatsUI(); updateLevelUI();
 
   const isAdmin = ADMIN_IDS.includes(user.id);
-  if (isAdmin || currentUser._hasTempDev) document.getElementById('devBtn').style.display = 'flex';
-  else document.getElementById('devBtn').style.display = 'none';
-  if (isAdmin) document.getElementById('adminBtn').style.display = 'flex';
+  if (isAdmin || currentUser._hasTempDev) {
+    document.getElementById('drawerDevBtn').style.display = 'flex';
+    document.getElementById('drawerAdminLabel').style.display = 'block';
+    document.getElementById('drawerAdminDivider').style.display = 'block';
+  } else {
+    document.getElementById('drawerDevBtn').style.display = 'none';
+  }
+  if (isAdmin) {
+    document.getElementById('drawerAdminBtn').style.display = 'flex';
+    document.getElementById('drawerAdminLabel').style.display = 'block';
+    document.getElementById('drawerAdminDivider').style.display = 'block';
+  }
 
   const displayName = currentUser._username || user.email.split('@')[0];
   toast((isNewUser ? '🎉 Welcome, ' : '👑 Welcome back, ') + displayName + '!', 'win');
@@ -5969,7 +6129,8 @@ async function openProfile() {
   }
   const email = isGuestUser ? null : currentUser.email;
   const username = currentUser._username;
-  document.getElementById('profileAvatar').textContent = isGuestUser ? '🎲' : (username || email)[0].toUpperCase();
+  const avatar = isGuestUser ? '🎲' : (currentUser._avatar || '♠');
+  document.getElementById('profileAvatar').textContent = avatar;
   document.getElementById('profileName').textContent = isGuestUser ? 'Guest' : (username || email.split('@')[0]);
   document.getElementById('profileEmailDisplay').textContent = isGuestUser ? 'Guest session — not saved' : email;
   document.getElementById('profileBalance').textContent = fmt(balance);
@@ -6078,6 +6239,7 @@ async function doTip() {
 
 function closeProfile() {
   document.getElementById('profileOverlay').classList.remove('open');
+  document.getElementById('avatarPicker').classList.remove('open');
 }
 
 async function doChangePassword() {
@@ -6926,6 +7088,76 @@ showTab = function(name) {
 };
 
 // Chat is initialised inside onAuthSuccess once the session is confirmed.
+
+// ── AVATAR PICKER ──
+const AVATARS = [
+  '♠','♥','♦','♣',
+  '🃏','🎰','🎲','🎯','🎳','🏆','💎',
+  '👑','🦁','🐯','🦊','🐺','🦅','🦋','🐲',
+  '🔥','⚡','❄️','🌙','⭐','🌊','💫',
+  '😎','🤑','😈','👿','🤠','🥷','🧠',
+  '💀','👾','🤖','👽','🎭','🎪','🃏'
+];
+
+function buildAvatarGrid() {
+  const grid = document.getElementById('avatarGrid');
+  if (!grid || grid.children.length > 0) return;
+  const current = currentUser?._avatar || '♠';
+  grid.innerHTML = AVATARS.map(a =>
+    `<div class="avatar-opt${a === current ? ' selected' : ''}" onclick="selectAvatar('${a}')">${a}</div>`
+  ).join('');
+}
+
+function toggleAvatarPicker() {
+  const picker = document.getElementById('avatarPicker');
+  const isOpen = picker.classList.contains('open');
+  if (!isOpen) buildAvatarGrid();
+  picker.classList.toggle('open', !isOpen);
+}
+
+async function selectAvatar(emoji) {
+  // Update UI immediately
+  document.getElementById('profileAvatar').textContent = emoji;
+  document.getElementById('avatarPicker').querySelectorAll('.avatar-opt').forEach(el => {
+    el.classList.toggle('selected', el.textContent === emoji);
+  });
+  // Update chip in header
+  const chip = document.getElementById('userChipLabel');
+  if (chip) chip.textContent = emoji + ' ' + (currentUser._username || currentUser.email.split('@')[0]);
+  // Save to memory and DB
+  currentUser._avatar = emoji;
+  if (currentUser && !currentUser._isGuest) {
+    await sb.from('users').update({ avatar: emoji }).eq('id', currentUser.id);
+  }
+  // Close picker after short delay
+  setTimeout(() => document.getElementById('avatarPicker').classList.remove('open'), 300);
+}
+
+
+function toggleDrawer() {
+  const drawer = document.getElementById('sideDrawer');
+  const backdrop = document.getElementById('drawerBackdrop');
+  const toggle = document.getElementById('drawerToggle');
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    toggle.classList.remove('open');
+  } else {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    toggle.classList.add('open');
+  }
+}
+function closeDrawer() {
+  document.getElementById('sideDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+  document.getElementById('drawerToggle').classList.remove('open');
+}
+function updateDrawerSound() {
+  const btn = document.getElementById('drawerSoundBtn');
+  if (btn) btn.innerHTML = (typeof soundEnabled !== 'undefined' && soundEnabled ? '🔊' : '🔇') + ' Sound';
+}
 
 </script>
 </body>
