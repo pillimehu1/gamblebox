@@ -5805,9 +5805,34 @@ async function doLogout() {
 
 // ── ON SUCCESSFUL AUTH ──
 let _authInProgress = false; // prevent double-fire from onAuthStateChange
+
+// ── DEBUG OVERLAY (remove after diagnosis) ──
+function _dbg(msg, color) {
+  let box = document.getElementById('_debugBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = '_debugBox';
+    box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:45vh;overflow-y:auto;opacity:0.95;';
+    const cls = document.createElement('button');
+    cls.textContent = '✕ Close Debug';
+    cls.style.cssText = 'display:block;margin-bottom:6px;background:#f00;color:#fff;border:none;padding:4px 10px;cursor:pointer;border-radius:4px;';
+    cls.onclick = () => box.remove();
+    box.appendChild(cls);
+    document.body.appendChild(box);
+  }
+  const line = document.createElement('div');
+  line.style.color = color || '#0f0';
+  line.style.borderBottom = '1px solid #222';
+  line.style.padding = '2px 0';
+  line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
 async function onAuthSuccess(user) {
-  if (_authInProgress) return; // already loading, ignore duplicate event
+  if (_authInProgress) { _dbg('onAuthSuccess called again — BLOCKED (duplicate)', '#ff0'); return; }
   _authInProgress = true;
+  _dbg('onAuthSuccess START — user.id: ' + user.id);
 
   currentUser = user;
   document.getElementById('userChip').style.display = 'flex';
@@ -5819,11 +5844,14 @@ async function onAuthSuccess(user) {
   saveBalanceToSupabase = async () => {}; // no-op during load
 
   let isNewUser = false;
+  _dbg('Fetching user row from DB...');
   const { data, error } = await sb
     .from('users')
     .select('balance, stats, dev_password, username, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
+
+  _dbg('DB result — data: ' + (data ? 'YES (balance=' + data.balance + ', username=' + data.username + ')' : 'NULL') + ' | error: ' + (error ? error.message + ' code=' + error.code : 'none'), data ? '#0f0' : '#f55');
 
   // Separately fetch username_set — column may not exist on all deployments
   let usernameSet = false;
@@ -5833,6 +5861,7 @@ async function onAuthSuccess(user) {
   }
 
   if (data && !error) {
+    _dbg('→ Taking EXISTING USER branch', '#0af');
     // ── Existing user — restore everything from DB ──
     balance = (data.balance !== null && data.balance !== undefined) ? parseFloat(data.balance) : 0;
     if (data.dev_password) devPassword = data.dev_password;
@@ -6441,10 +6470,11 @@ async function ownerRemoveAdmin(userId, username) {
 function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
 document.getElementById('adminOverlay').addEventListener('click', function(e) { if (e.target === this) closeAdmin(); });
 
-// Helper: fetch user row by username
+// Helper: fetch user row by username (case-insensitive)
 async function _adminGetUser(username) {
-  const { data, error } = await sb.from('users').select('*').eq('username', username.trim().toLowerCase()).single();
-  if (error || !data) return null;
+  const { data, error } = await sb.from('users').select('*').ilike('username', username.trim()).single();
+  if (error) { console.warn('_adminGetUser error:', error.message, error.code); return null; }
+  if (!data) return null;
   return data;
 }
 
