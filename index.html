@@ -49,35 +49,36 @@
     padding:10px 14px;
   }
   .header-top {
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center;
     gap:8px;
   }
   .header-center {
-    position:absolute; left:50%; transform:translateX(-50%);
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    flex:1;
   }
   .header-right {
-    display:flex; align-items:center; gap:6px; margin-left:auto;
+    display:flex; align-items:center; gap:6px; justify-content:flex-end;
+    flex:1;
   }
   .logo {
-    display:flex; align-items:center; gap:7px; flex-shrink:0; cursor:default;
+    display:flex; align-items:center; gap:8px; flex-shrink:0; cursor:default;
+    flex:1;
   }
   .logo-icon {
-    font-size:1.4rem; line-height:1;
-    filter:drop-shadow(0 0 6px rgba(240,192,64,.7));
+    font-size:1.55rem; line-height:1;
+    filter:drop-shadow(0 0 8px rgba(240,192,64,.85));
   }
   .logo-text {
     font-family:'Cinzel Decorative',cursive;
-    font-size:1.15rem;
+    font-size:1rem;
     background:linear-gradient(135deg,#f0c040 0%,#ffd700 45%,#f0a000 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     letter-spacing:1.5px; white-space:nowrap;
-    text-shadow:none;
-    filter:drop-shadow(0 0 8px rgba(240,192,64,.35));
+    filter:drop-shadow(0 0 8px rgba(240,192,64,.4));
   }
   .logo-suits {
-    font-size:.6rem; color:rgba(240,192,64,.45);
-    letter-spacing:2px; display:block; margin-top:-2px;
+    font-size:.58rem; color:rgba(240,192,64,.5);
+    letter-spacing:2px; display:block; margin-top:1px;
     font-family:'Rajdhani',sans-serif;
   }
   .balance-box {
@@ -5955,33 +5956,9 @@ async function doLogout() {
 // ── ON SUCCESSFUL AUTH ──
 let _authInProgress = false; // prevent double-fire from onAuthStateChange
 
-// ── DEBUG OVERLAY (remove after diagnosis) ──
-function _dbg(msg, color) {
-  let box = document.getElementById('_debugBox');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = '_debugBox';
-    box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:8px;max-height:45vh;overflow-y:auto;opacity:0.95;';
-    const cls = document.createElement('button');
-    cls.textContent = '✕ Close Debug';
-    cls.style.cssText = 'display:block;margin-bottom:6px;background:#f00;color:#fff;border:none;padding:4px 10px;cursor:pointer;border-radius:4px;';
-    cls.onclick = () => box.remove();
-    box.appendChild(cls);
-    document.body.appendChild(box);
-  }
-  const line = document.createElement('div');
-  line.style.color = color || '#0f0';
-  line.style.borderBottom = '1px solid #222';
-  line.style.padding = '2px 0';
-  line.textContent = new Date().toISOString().slice(11,19) + ' ' + msg;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-}
-
 async function onAuthSuccess(user) {
-  if (_authInProgress) { _dbg('onAuthSuccess called again — BLOCKED (duplicate)', '#ff0'); return; }
+  if (_authInProgress) return;
   _authInProgress = true;
-  _dbg('onAuthSuccess START — user.id: ' + user.id);
 
   currentUser = user;
   document.getElementById('userChip').style.display = 'flex';
@@ -5993,14 +5970,11 @@ async function onAuthSuccess(user) {
   saveBalanceToSupabase = async () => {}; // no-op during load
 
   let isNewUser = false;
-  _dbg('Fetching user row from DB...');
   const { data, error } = await sb
     .from('users')
     .select('balance, stats, dev_password, username, avatar, betting_disabled, temp_dev_until')
     .eq('id', user.id)
     .single();
-
-  _dbg('DB result — data: ' + (data ? 'YES (balance=' + data.balance + ', username=' + data.username + ')' : 'NULL') + ' | error: ' + (error ? error.message + ' code=' + error.code : 'none'), data ? '#0f0' : '#f55');
 
   // Separately fetch username_set — column may not exist on all deployments
   let usernameSet = false;
@@ -6010,7 +5984,6 @@ async function onAuthSuccess(user) {
   }
 
   if (data && !error) {
-    _dbg('→ Taking EXISTING USER branch', '#0af');
     // ── Existing user — restore everything from DB ──
     balance = (data.balance !== null && data.balance !== undefined) ? parseFloat(data.balance) : 0;
     if (data.dev_password) devPassword = data.dev_password;
@@ -6070,6 +6043,9 @@ async function onAuthSuccess(user) {
   // Restore auto-save now that balance/stats are correctly loaded
   saveBalanceToSupabase = _pauseSave;
   _authInProgress = false;
+
+  // Sync admin list from DB before showing/hiding admin button
+  await loadAdminIdsFromDB();
 
   updateBalance(); updateStatsUI(); updateLevelUI();
 
@@ -6549,12 +6525,21 @@ async function checkDailyBonus() {
 // ════════════════════════════════════════════════════════════
 const OWNER_ID = 'b8b04d1d-77c5-41f0-815e-bc60b5247709';
 let ADMIN_IDS = [
-  'f845e238-2678-47ec-9b4f-c6e333bfb763',
   'b8b04d1d-77c5-41f0-815e-bc60b5247709'
 ];
 
 function isOwner() { return currentUser && currentUser.id === OWNER_ID; }
 function isAdmin() { return currentUser && (ADMIN_IDS.includes(currentUser.id) || currentUser.id === OWNER_ID); }
+
+// Load admin IDs from DB on boot — keeps in sync with adds/removes without needing code redeploy
+async function loadAdminIdsFromDB() {
+  const { data } = await sb.from('users').select('id').eq('is_admin', true);
+  if (data && data.length) {
+    const dbIds = data.map(r => r.id);
+    // Merge with hardcoded list — always keep OWNER_ID and hardcoded admins
+    ADMIN_IDS = [...new Set([...ADMIN_IDS, ...dbIds])];
+  }
+}
 
 function openAdmin() {
   if (!isAdmin()) return;
@@ -6612,7 +6597,7 @@ async function ownerAddAdmin() {
   if (!ok) return;
   // Store in Supabase
   const { error } = await sb.from('users').update({ is_admin: true }).eq('id', u.id);
-  if (error) return _adminMsg('ownerAdminMsg', error.message, false);
+  if (error) return _adminMsg('ownerAdminMsg', 'DB error: ' + error.message, false);
   ADMIN_IDS.push(u.id);
   _adminMsg('ownerAdminMsg', `✓ ${un} is now an admin.`, true);
   document.getElementById('ownerAddAdminUser').value = '';
@@ -6624,7 +6609,7 @@ async function ownerRemoveAdmin(userId, username) {
   const ok = await showConfirm({ icon:'⚠️', title:'Remove Admin?', msg:`Remove admin access from ${username}?`, yesText:'Remove' });
   if (!ok) return;
   const { error } = await sb.from('users').update({ is_admin: false }).eq('id', userId);
-  if (error) return _adminMsg('ownerAdminMsg', error.message, false);
+  if (error) return _adminMsg('ownerAdminMsg', 'DB error: ' + error.message, false);
   ADMIN_IDS = ADMIN_IDS.filter(id => id !== userId);
   _adminMsg('ownerAdminMsg', `✓ ${username} removed from admins.`, true);
   renderAdminList();
@@ -6634,10 +6619,10 @@ document.getElementById('adminOverlay').addEventListener('click', function(e) { 
 
 // Helper: fetch user row by username (case-insensitive)
 async function _adminGetUser(username) {
-  const { data, error } = await sb.from('users').select('*').ilike('username', username.trim()).single();
+  const { data, error } = await sb.from('users').select('*').ilike('username', username.trim()).limit(1);
   if (error) { console.warn('_adminGetUser error:', error.message, error.code); return null; }
-  if (!data) return null;
-  return data;
+  if (!data || !data.length) return null;
+  return data[0];
 }
 
 // Helper: set admin message
@@ -6682,8 +6667,8 @@ async function adminSetBalance() {
   if (!ok) return;
   _adminMsg('adminBalMsg', 'Setting…', true);
   const { error } = await sb.from('users').update({ balance: amount }).eq('id', u.id);
-  if (error) return _adminMsg('adminBalMsg', error.message, false);
-  _adminMsg('adminBalMsg', `✓ Set ${un}'s balance to ${fmt(amount)}`, true);
+  if (error) return _adminMsg('adminBalMsg', 'DB error: ' + error.message, false);
+  _adminMsg('adminBalMsg', `✓ Set ${u.username}'s balance to ${fmt(amount)}`, true);
 }
 
 // RESET ACCOUNT
@@ -6699,7 +6684,7 @@ async function adminResetAccount() {
   _adminMsg('adminResetMsg', 'Resetting…', true);
   const freshStats = DEFAULT_STATS();
   const { error } = await sb.from('users').update({ balance: 1000, stats: JSON.stringify(freshStats) }).eq('id', u.id);
-  if (error) return _adminMsg('adminResetMsg', error.message, false);
+  if (error) return _adminMsg('adminResetMsg', 'DB error: ' + error.message, false);
   _adminMsg('adminResetMsg', `✓ ${un}'s account has been reset.`, true);
 }
 
@@ -6716,7 +6701,7 @@ async function adminToggleBan(disable) {
   if (!ok) return;
   _adminMsg('adminBanMsg', 'Updating…', true);
   const { error } = await sb.from('users').update({ betting_disabled: disable }).eq('id', u.id);
-  if (error) return _adminMsg('adminBanMsg', error.message, false);
+  if (error) return _adminMsg('adminBanMsg', 'DB error: ' + error.message, false);
   _adminMsg('adminBanMsg', `✓ Betting ${disable ? 'disabled' : 'enabled'} for ${un}.`, true);
 }
 
@@ -6731,7 +6716,7 @@ async function adminGrantDev() {
   if (!u) return _adminMsg('adminDevMsg', 'User not found.', false);
   const until = new Date(Date.now() + hours * 36e5).toISOString();
   const { error } = await sb.from('users').update({ temp_dev_until: until }).eq('id', u.id);
-  if (error) return _adminMsg('adminDevMsg', error.message, false);
+  if (error) return _adminMsg('adminDevMsg', 'DB error: ' + error.message, false);
   _adminMsg('adminDevMsg', `✓ Dev tools granted to ${un} for ${hours}h.`, true);
 }
 
@@ -6742,7 +6727,7 @@ async function adminRevokeDev() {
   const u = await _adminGetUser(un);
   if (!u) return _adminMsg('adminDevMsg', 'User not found.', false);
   const { error } = await sb.from('users').update({ temp_dev_until: null }).eq('id', u.id);
-  if (error) return _adminMsg('adminDevMsg', error.message, false);
+  if (error) return _adminMsg('adminDevMsg', 'DB error: ' + error.message, false);
   _adminMsg('adminDevMsg', `✓ Dev tools revoked from ${un}.`, true);
 }
 
